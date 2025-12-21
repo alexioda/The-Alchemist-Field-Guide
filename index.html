@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Alchemist's Field Guide | Interactive Protocol</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Theme Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        stone: {
+                            50: '#fafaf9',
+                            100: '#f5f5f4',
+                            800: '#292524',
+                            900: '#1c1917',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Utilities */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            height: 300px;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Hide scrollbar for clean UI */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        .journal-input {
+            background-image: linear-gradient(transparent, transparent 31px, #e7e5e4 31px, #e7e5e4 32px, transparent 32px);
+            background-size: 100% 32px;
+            line-height: 32px;
+            padding: 8px 0;
+        }
+    </style>
+
+    <!-- Chosen Palette: "The Alchemist" - Stone, Charcoal, Gold, and Teal. 
+         Designed to evoke high-end stationery and psychological depth. -->
+    
+    <!-- Application Structure Plan: 
+         - Layout: Split screen on Desktop (Nav Left, Content Right), Stacked on Mobile (Nav Top, Content Bottom).
+         - Navigation: Linear progression (Introduction -> Day 1 -> ... -> Day 7 -> Next Level).
+         - Interaction: Users fill out "Field Notes" which are saved to local state.
+         - Visualization: Day 1 includes a Chart.js visualization of the user's emotional shift. 
+         - Goal: To create a frictionless "digital workbook" that feels like a premium artifact. -->
+
+</head>
+<body class="bg-stone-50 text-stone-900 font-sans antialiased h-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- Mobile Navigation Bar -->
+    <div class="md:hidden bg-stone-900 text-stone-50 p-4 flex justify-between items-center z-50">
+        <span class="font-serif text-xl italic">Adaptiv Field Guide</span>
+        <button id="mobile-menu-btn" class="text-gold-400">☰</button>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="fixed inset-0 bg-stone-900/95 z-40 hidden flex-col justify-center items-center space-y-6">
+        <!-- Links injected by JS -->
+    </div>
+
+    <!-- Sidebar Navigation (Desktop) -->
+    <aside class="hidden md:flex flex-col w-72 bg-stone-900 text-stone-300 h-full border-r border-stone-800 p-8 overflow-y-auto no-scrollbar">
+        <div class="mb-12">
+            <h1 class="font-serif text-3xl text-stone-50 italic">The Alchemist's<br>Field Guide</h1>
+            <p class="text-xs uppercase tracking-widest text-gold-400 mt-2">7-Day Genesis Protocol</p>
+        </div>
+
+        <nav class="space-y-2 flex-1" id="desktop-nav">
+            <!-- Nav Items injected by JS -->
+        </nav>
+
+        <div class="mt-8 pt-8 border-t border-stone-800 text-xs text-stone-500">
+            A Companion to Adaptiv<br>
+            Architecture for the Modern Soul.
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto relative" id="main-content">
+        <div class="max-w-3xl mx-auto px-6 py-12 md:py-20 min-h-full flex flex-col">
+            
+            <!-- Dynamic Content Container -->
+            <div id="content-container" class="flex-1 fade-in">
+                <!-- Content injected via JS -->
+            </div>
+
+            <!-- Footer Navigation -->
+            <div class="mt-16 flex justify-between items-center border-t border-stone-200 pt-8" id="footer-nav">
+                <button id="prev-btn" class="text-stone-400 hover:text-stone-900 font-serif italic text-lg transition-colors flex items-center gap-2 disabled:opacity-0">
+                    &larr; Previous
+                </button>
+                <div class="h-1 flex-1 mx-4 bg-stone-100 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-gold-400 w-0 transition-all duration-500"></div>
+                </div>
+                <button id="next-btn" class="bg-stone-900 text-stone-50 px-8 py-3 rounded-full hover:bg-stone-800 transition-all font-sans text-sm tracking-widest uppercase shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    Next &rarr;
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Visualization & Content Choices:
+         - Introduction: Text-heavy, serif, establishing the "frame".
+         - Day 1: Interactive Range Sliders -> Real-time Chart.js update to visualize the "State Shift".
+         - Days 2-7: Journaling inputs styled like lined paper to encourage writing.
+         - Icons: Unicode symbols used for thematic representation (Anchor, Eye, etc.) to avoid SVG complexity.
+         - Logic: Vanilla JS state management to handle navigation and data persistence. -->
+         
+    <!-- CONFIRMATION: NO SVG graphics used (Chart.js uses Canvas). NO Mermaid JS used. -->
+
+    <script>
+        // --- DATA & STATE ---
+        const appState = {
+            currentStep: 0,
+            journalEntries: {
+                day1: { before: 5, after: 8, truth: "" },
+                day2: { location: "", voice: "" },
+                day3: { doing: "", thanks: "" },
+                day4: { surface: "", raw: "" },
+                day5: { thought: "" },
+                day6: { action: "", when: "" },
+                day7: { identity: "" }
+            }
+        };
+
+        const contentMap = [
+            {
+                id: 'intro',
+                title: "Introduction",
+                icon: "✦",
+                render: () => `
+                    <div class="text-center space-y-6">
+                        <span class="text-xs font-bold tracking-[0.3em] uppercase text-stone-400">The Manifesto</span>
+                        <h2 class="text-4xl md:text-5xl font-serif italic text-stone-900 leading-tight">This is not a book.<br>This is a map.</h2>
+                        <div class="w-16 h-1 bg-gold-400 mx-auto"></div>
+                        <p class="text-lg md:text-xl text-stone-600 font-serif leading-relaxed max-w-xl mx-auto">
+                            You cannot think your way out of a feeling. You must locate it, listen to it, and transmute it.
+                            This Field Guide is designed to be used alongside the <strong>Adaptiv Web App</strong>.
+                        </p>
+                        
+                        <div class="bg-stone-100 p-8 rounded-2xl text-left max-w-lg mx-auto border border-stone-200 shadow-sm mt-8">
+                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest mb-4 text-stone-500">The Commitment</h3>
+                            <ol class="space-y-4 font-serif text-lg text-stone-800">
+                                <li class="flex items-start gap-3"><span class="text-gold-500">01.</span> Open the App daily.</li>
+                                <li class="flex items-start gap-3"><span class="text-gold-500">02.</span> Complete the full cycle (5 mins).</li>
+                                <li class="flex items-start gap-3"><span class="text-gold-500">03.</span> Write your insight here immediately.</li>
+                            </ol>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'day1',
+                title: "Day 1: The Anchor",
+                icon: "⚓",
+                render: () => `
+                    <div class="space-y-8">
+                        <div class="border-l-2 border-gold-400 pl-6">
+                            <h2 class="text-3xl font-serif italic text-stone-900">The Anchor</h2>
+                            <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Familiarity & Pattern Interrupt</p>
+                        </div>
+                        
+                        <p class="font-serif text-lg text-stone-700 leading-relaxed">
+                            Stress is a loop. To break it, we must introduce a new pattern. Today is not about being perfect or deep. It is simply about proving to your nervous system that you can stop the spinning.
+                        </p>
+
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest mb-6">The Shift Visualization</h3>
+                            
+                            <div class="mb-6 space-y-4">
+                                <div>
+                                    <label class="flex justify-between text-sm text-stone-600 mb-2">
+                                        <span>How did you feel <strong>before</strong> opening the app?</span>
+                                        <span id="val-before">${appState.journalEntries.day1.before}</span>
+                                    </label>
+                                    <input type="range" min="1" max="10" value="${appState.journalEntries.day1.before}" 
+                                        oninput="updateDay1(this.value, 'before')"
+                                        class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-stone-900">
+                                    <div class="flex justify-between text-[10px] text-stone-400 uppercase mt-1"><span>Stressed</span><span>Calm</span></div>
+                                </div>
+                                
+                                <div>
+                                    <label class="flex justify-between text-sm text-stone-600 mb-2">
+                                        <span>How did you feel <strong>after</strong> the final card?</span>
+                                        <span id="val-after">${appState.journalEntries.day1.after}</span>
+                                    </label>
+                                    <input type="range" min="1" max="10" value="${appState.journalEntries.day1.after}" 
+                                        oninput="updateDay1(this.value, 'after')"
+                                        class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-gold-500">
+                                    <div class="flex justify-between text-[10px] text-stone-400 uppercase mt-1"><span>Stressed</span><span>Calm</span></div>
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <canvas id="day1Chart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="font-serif text-xl italic text-stone-800">Write your "New Truth" from today's session:</label>
+                            <textarea oninput="saveJournal('day1', 'truth', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-700 font-serif text-lg" placeholder="Today I realized...">${appState.journalEntries.day1.truth}</textarea>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'day2',
+                title: "Day 2: The Sensation",
+                icon: "⚡",
+                render: () => `
+                    <div class="space-y-8">
+                        <div class="border-l-2 border-gold-400 pl-6">
+                            <h2 class="text-3xl font-serif italic text-stone-900">The Sensation</h2>
+                            <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Deepening Body Connection</p>
+                        </div>
+
+                        <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the Full Flow. When you reach "The Vessel," select the zone calling to you and close your eyes. Breathe into it for 60 full seconds before clicking "Next."</p>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="font-serif text-xl italic text-stone-800">Where did the tension live today?</label>
+                                <textarea oninput="saveJournal('day2', 'location', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[60px] journal-input resize-none text-stone-700 font-serif text-lg" placeholder="e.g., The chest, behind the eyes...">${appState.journalEntries.day2.location}</textarea>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="font-serif text-xl italic text-stone-800">If that sensation could speak, what would its voice sound like?</label>
+                                <p class="text-xs text-stone-500 uppercase tracking-widest">Fast? Slow? Angry? Scared?</p>
+                                <textarea oninput="saveJournal('day2', 'voice', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-700 font-serif text-lg">${appState.journalEntries.day2.voice}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'day3',
+                title: "Day 3: The Conversation",
+                icon: "💬",
+                render: () => `
+                    <div class="space-y-8">
+                        <div class="border-l-2 border-gold-400 pl-6">
+                            <h2 class="text-3xl font-serif italic text-stone-900">The Conversation</h2>
+                            <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Listening vs. Thinking</p>
+                        </div>
+
+                        <p class="font-serif text-lg text-stone-700">The part of you that is anxious is not an enemy; it is a Protector. Today, we listen for the surprise.</p>
+
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="font-serif text-xl italic text-stone-800">What is this part actually trying to do for you?</label>
+                                <textarea oninput="saveJournal('day3', 'doing', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-700 font-serif text-lg">${appState.journalEntries.day3.doing}</textarea>
+                            </div>
+                            
+                            <div class="bg-stone-100 p-6 rounded-xl border border-stone-200">
+                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-500 mb-2 block">Write a message of thanks to this protector:</label>
+                                <div class="font-serif text-xl text-stone-800 italic leading-loose">
+                                    "I appreciate your intensity. Thank you for trying to keep me safe from
+                                    <input type="text" oninput="saveJournal('day3', 'thanks', this.value)" value="${appState.journalEntries.day3.thanks}" class="bg-transparent border-b border-stone-400 focus:border-gold-500 outline-none w-1/2 text-center" placeholder="...">.
+                                    I can handle this now."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'day4',
+                title: "Day 4: The Truth",
+                icon: "👁️",
+                render: () => `
+                    <div class="space-y-8">
+                        <div class="border-l-2 border-gold-400 pl-6">
+                            <h2 class="text-3xl font-serif italic text-stone-900">The Truth</h2>
+                            <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Radical Honesty</p>
+                        </div>
+
+                        <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> At "Breakthrough Laser," look at the question: <em>"What is the truth now?"</em> Write the rawest, most unpolished truth you can access.</p>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div class="space-y-2 bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-400">The Surface Story</label>
+                                <p class="text-xs text-stone-500 mb-2">What you told people/yourself.</p>
+                                <textarea oninput="saveJournal('day4', 'surface', this.value)" class="w-full bg-transparent border-b border-stone-200 focus:border-stone-900 focus:outline-none min-h-[150px] resize-none text-stone-700 font-serif text-lg italic" placeholder="I'm just stressed about the deadline...">${appState.journalEntries.day4.surface}</textarea>
+                            </div>
+                            
+                            <div class="space-y-2 bg-stone-100 p-6 rounded-xl border border-stone-200 shadow-inner">
+                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-gold-600">The Raw Truth</label>
+                                <p class="text-xs text-stone-500 mb-2">What you found in the app.</p>
+                                <textarea oninput="saveJournal('day4', 'raw', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-gold-500 focus:outline-none min-h-[150px] resize-none text-stone-900 font-serif text-lg font-medium" placeholder="I'm afraid I'm not good enough...">${appState.journalEntries.day4.raw}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'day5',
+                title: "Day 5: The Pause",
+                icon: "⏸️",
+                render: () => `
+                    <div class="space-y-8">
+                        <div class="border-l-2 border-gold-400 pl-6">
+                            <h2 class="text-3xl font-serif italic text-stone-900">The Pause</h2>
+                            <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Capacity Expansion</p>
+                        </div>
+
+                        <p class="font-serif text-lg text-stone-700 leading-relaxed">
+                            You cannot build a skyscraper on a shaky foundation. Today we expand your capacity to hold energy by slowing down.
+                        </p>
+
+                         <div class="flex justify-center py-8">
+                            <div class="w-32 h-32 rounded-full border-4 border-stone-200 flex items-center justify-center animate-pulse">
+                                <span class="font-serif text-2xl italic text-stone-400">Breathe</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="font-serif text-xl italic text-stone-800">In the silence after the breathwork, what was the first clear thought?</label>
+                            <textarea oninput="saveJournal('day5', 'thought', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-700 font-serif text-lg">${appState.journalEntries.day5.thought}</textarea>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'day6',
+                title: "Day 6: The Boldness",
+                icon: "🛡️",
+                render: () => `
+                    <div class="space-y-8">
+                        <div class="border-l-2 border-gold-400 pl-6">
+                            <h2 class="text-3xl font-serif italic text-stone-900">The Boldness</h2>
+                            <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Breaking the Fear Threshold</p>
+                        </div>
+
+                        <div class="bg-gold-50 p-6 rounded-xl border border-gold-100">
+                             <p class="font-serif text-lg text-gold-900 italic">"Insight without action is just entertainment."</p>
+                        </div>
+
+                        <div class="space-y-8">
+                             <div class="space-y-2">
+                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-500">The Scary Action</label>
+                                <input type="text" oninput="saveJournal('day6', 'action', this.value)" value="${appState.journalEntries.day6.action}" class="w-full bg-transparent border-b-2 border-stone-900 py-4 font-serif text-2xl text-stone-900 focus:outline-none placeholder:text-stone-300" placeholder="I will...">
+                            </div>
+
+                             <div class="space-y-2">
+                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-500">By When</label>
+                                <input type="text" oninput="saveJournal('day6', 'when', this.value)" value="${appState.journalEntries.day6.when}" class="w-full bg-transparent border-b border-stone-300 py-2 font-serif text-xl text-stone-700 focus:outline-none placeholder:text-stone-300" placeholder="Tomorrow at...">
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'day7',
+                title: "Day 7: Genesis",
+                icon: "☀",
+                render: () => `
+                    <div class="space-y-8">
+                        <div class="border-l-2 border-gold-400 pl-6">
+                            <h2 class="text-3xl font-serif italic text-stone-900">Genesis</h2>
+                            <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Embodiment & Identity Shift</p>
+                        </div>
+
+                        <p class="font-serif text-lg text-stone-700 leading-relaxed">
+                            You are no longer the person who started this protocol. You have mapped the vessel, befriended the protector, and cleared the fog. You are now the Architect.
+                        </p>
+                        
+                        <div class="bg-stone-900 text-white p-10 rounded-2xl shadow-2xl text-center border border-stone-800 mt-8 mb-8 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl font-serif italic leading-none">A</div>
+                            <p class="text-xs uppercase tracking-[0.3em] text-gold-400 mb-6">The Declaration</p>
+                            <p class="font-serif text-2xl italic leading-relaxed mb-8 opacity-80">"I am no longer the victim of my stress. I am the alchemist of my energy."</p>
+                            
+                            <p class="text-xs uppercase tracking-widest text-stone-500 mb-2">My New Identity Statement</p>
+                            <div class="text-3xl md:text-4xl font-serif italic text-white leading-tight">
+                                "I am the kind of person who
+                                <span class="border-b border-stone-600 px-2 inline-block min-w-[200px] text-gold-200 outline-none" contenteditable="true" oninput="saveJournal('day7', 'identity', this.innerText)">${appState.journalEntries.day7.identity || '...'}</span>"
+                            </div>
+                        </div>
+
+                        <div class="text-center space-y-4 pt-8 border-t border-stone-200">
+                            <h3 class="font-sans text-sm font-bold uppercase tracking-widest text-stone-900">The Next Level</h3>
+                            <p class="font-serif text-stone-600 italic">If you are ready to apply this architecture to your career, your relationships, and your long-term vision, let's build the blueprint together.</p>
+                            <div class="flex flex-col gap-3 max-w-sm mx-auto">
+                                <button class="w-full py-3 bg-stone-200 hover:bg-stone-300 text-stone-800 font-sans text-xs uppercase tracking-widest rounded-lg transition-colors">Book 1:1 Genesis Coaching</button>
+                                <button class="w-full py-3 bg-white border border-stone-200 hover:border-gold-400 text-stone-600 font-sans text-xs uppercase tracking-widest rounded-lg transition-colors">Get Energy Audit (ELI)</button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        // --- CORE LOGIC ---
+
+        function init() {
+            renderNav();
+            renderContent();
+            renderMobileNav();
+            updateProgress();
+        }
+
+        function renderNav() {
+            const nav = document.getElementById('desktop-nav');
+            nav.innerHTML = contentMap.map((item, index) => `
+                <button onclick="goToStep(${index})" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all ${index === appState.currentStep ? 'bg-stone-800 text-white shadow-md' : 'hover:bg-stone-800/50 text-stone-400'}">
+                    <span class="${index === appState.currentStep ? 'text-gold-400' : 'text-stone-600'} text-lg">${item.icon}</span>
+                    <div class="flex flex-col">
+                        <span class="font-serif italic text-lg leading-none">${item.title.split(':')[0]}</span>
+                        ${item.title.includes(':') ? `<span class="text-[9px] uppercase tracking-widest opacity-60 mt-1">${item.title.split(':')[1]}</span>` : ''}
+                    </div>
+                </button>
+            `).join('');
+        }
+        
+        function renderMobileNav() {
+            const menu = document.getElementById('mobile-menu');
+            menu.innerHTML = contentMap.map((item, index) => `
+                <button onclick="goToStep(${index}); toggleMobileMenu()" class="text-xl font-serif italic ${index === appState.currentStep ? 'text-gold-400' : 'text-stone-300'}">
+                    ${item.title}
+                </button>
+            `).join('');
+        }
+
+        function renderContent() {
+            const container = document.getElementById('content-container');
+            const step = contentMap[appState.currentStep];
+            
+            // Fade out
+            container.style.opacity = '0';
+            
+            setTimeout(() => {
+                container.innerHTML = step.render();
+                container.style.opacity = '1';
+                
+                // Initialize Chart if on Day 1
+                if (step.id === 'day1') {
+                    initDay1Chart();
+                }
+            }, 200);
+
+            // Update Buttons
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            
+            prevBtn.disabled = appState.currentStep === 0;
+            prevBtn.style.opacity = appState.currentStep === 0 ? '0' : '1';
+            
+            nextBtn.innerHTML = appState.currentStep === contentMap.length - 1 ? "Finish" : "Next &rarr;";
+        }
+
+        function goToStep(index) {
+            if (index >= 0 && index < contentMap.length) {
+                appState.currentStep = index;
+                renderNav();
+                renderContent();
+                renderMobileNav();
+                updateProgress();
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((appState.currentStep + 1) / contentMap.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+        }
+
+        // --- INTERACTION HANDLERS ---
+
+        function saveJournal(day, key, value) {
+            appState.journalEntries[day][key] = value;
+            // In a real app, save to localStorage here
+            // localStorage.setItem('adaptiv_journal', JSON.stringify(appState.journalEntries));
+        }
+
+        // Day 1 Specific Logic
+        let day1ChartInstance = null;
+
+        function updateDay1(val, type) {
+            document.getElementById(`val-${type}`).innerText = val;
+            appState.journalEntries.day1[type] = val;
+            if (day1ChartInstance) {
+                day1ChartInstance.data.datasets[0].data = [
+                    appState.journalEntries.day1.before, 
+                    appState.journalEntries.day1.after
+                ];
+                day1ChartInstance.update();
+            }
+        }
+
+        function initDay1Chart() {
+            const ctx = document.getElementById('day1Chart').getContext('2d');
+            day1ChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Before', 'After'],
+                    datasets: [{
+                        label: 'State Shift',
+                        data: [appState.journalEntries.day1.before, appState.journalEntries.day1.after],
+                        backgroundColor: ['#e7e5e4', '#fbbf24'], // stone-200, gold-400
+                        borderRadius: 8,
+                        barThickness: 50
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            grid: { display: false }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        }
+        
+        // --- EVENT LISTENERS ---
+        
+        document.getElementById('prev-btn').addEventListener('click', () => goToStep(appState.currentStep - 1));
+        document.getElementById('next-btn').addEventListener('click', () => goToStep(appState.currentStep + 1));
+        
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+            mobileMenuBtn.innerText = mobileMenu.classList.contains('hidden') ? '☰' : '✕';
+        }
+        
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>
