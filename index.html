@@ -76,20 +76,47 @@
             line-height: 32px;
             padding: 8px 0;
         }
+
+        /* Login Overlay Transition */
+        #login-overlay {
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+        #login-overlay.hidden-overlay {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
     </style>
 
-    <!-- Chosen Palette: "The Alchemist" - Stone, Charcoal, Gold, and Teal. 
-         Designed to evoke high-end stationery and psychological depth. -->
-    
+    <!-- Chosen Palette: "The Alchemist" - Stone, Charcoal, Gold. -->
     <!-- Application Structure Plan: 
-         - Layout: Split screen on Desktop (Nav Left, Content Right), Stacked on Mobile (Nav Top, Content Bottom).
-         - Navigation: Linear progression (Introduction -> Day 1 -> ... -> Day 7 -> Next Level).
-         - Interaction: Users fill out "Field Notes" which are saved to local state.
-         - Visualization: Day 1 includes a Chart.js visualization of the user's emotional shift. 
-         - Goal: To create a frictionless "digital workbook" that feels like a premium artifact. -->
+         - Updated Content: Now uses the "7 Cycles" strategy (Full Flow Daily).
+         - Security: Includes "GENESIS" passcode gate.
+         - Interaction: Persistent local storage for journal entries. -->
 
 </head>
 <body class="bg-stone-50 text-stone-900 font-sans antialiased h-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- LOGIN OVERLAY (Simple Gate) -->
+    <div id="login-overlay" class="fixed inset-0 bg-stone-900 z-[100] flex flex-col items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full space-y-8 animate-enter">
+            <div>
+                <h1 class="font-serif text-4xl text-stone-50 italic">The Alchemist's Field Guide</h1>
+                <p class="text-xs uppercase tracking-[0.2em] text-gold-400 mt-2">Restricted Access</p>
+            </div>
+            
+            <div class="bg-stone-800 p-8 rounded-2xl border border-stone-700 shadow-2xl">
+                <p class="text-stone-400 text-sm mb-6 font-serif">Enter the Access Code provided in your purchase receipt.</p>
+                <input type="password" id="password-input" 
+                    class="w-full bg-stone-900 border-b border-stone-600 text-center text-stone-50 text-xl py-3 focus:outline-none focus:border-gold-400 font-serif placeholder:text-stone-700 transition-colors"
+                    placeholder="ENTER CODE">
+                <p id="error-msg" class="text-red-400 text-xs mt-4 opacity-0 transition-opacity">Incorrect Access Code</p>
+                <button onclick="checkPassword()" class="mt-8 w-full bg-stone-50 text-stone-900 py-3 rounded-full font-sans text-xs font-bold uppercase tracking-widest hover:bg-gold-400 transition-colors">
+                    Unlock Protocol
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Mobile Navigation Bar -->
     <div class="md:hidden bg-stone-900 text-stone-50 p-4 flex justify-between items-center z-50">
@@ -144,16 +171,38 @@
         </div>
     </main>
 
-    <!-- Visualization & Content Choices:
-         - Introduction: Text-heavy, serif, establishing the "frame".
-         - Day 1: Interactive Range Sliders -> Real-time Chart.js update to visualize the "State Shift".
-         - Days 2-7: Journaling inputs styled like lined paper to encourage writing.
-         - Icons: Unicode symbols used for thematic representation (Anchor, Eye, etc.) to avoid SVG complexity.
-         - Logic: Vanilla JS state management to handle navigation and data persistence. -->
-         
-    <!-- CONFIRMATION: NO SVG graphics used (Chart.js uses Canvas). NO Mermaid JS used. -->
-
     <script>
+        // --- AUTH LOGIC ---
+        const ACCESS_CODE = "GENESIS"; // Hardcoded simple protection
+        
+        function checkPassword() {
+            const input = document.getElementById('password-input');
+            const errorMsg = document.getElementById('error-msg');
+            
+            if (input.value.toUpperCase().trim() === ACCESS_CODE) {
+                localStorage.setItem('adaptiv_field_guide_access', 'granted');
+                document.getElementById('login-overlay').classList.add('hidden-overlay');
+            } else {
+                errorMsg.style.opacity = '1';
+                input.classList.add('border-red-500');
+                setTimeout(() => {
+                    errorMsg.style.opacity = '0';
+                    input.classList.remove('border-red-500');
+                }, 2000);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('adaptiv_field_guide_access') === 'granted') {
+                document.getElementById('login-overlay').classList.add('hidden-overlay');
+            }
+            document.getElementById('password-input').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
+        });
+
         // --- DATA & STATE ---
         const appState = {
             currentStep: 0,
@@ -175,20 +224,26 @@
                 icon: "✦",
                 render: () => `
                     <div class="text-center space-y-6">
-                        <span class="text-xs font-bold tracking-[0.3em] uppercase text-stone-400">The Manifesto</span>
-                        <h2 class="text-4xl md:text-5xl font-serif italic text-stone-900 leading-tight">This is not a book.<br>This is a map.</h2>
+                        <span class="text-xs font-bold tracking-[0.3em] uppercase text-stone-400">The Philosophy</span>
+                        <h2 class="text-4xl md:text-5xl font-serif italic text-stone-900 leading-tight">Seven Cycles<br>of Alchemy.</h2>
                         <div class="w-16 h-1 bg-gold-400 mx-auto"></div>
                         <p class="text-lg md:text-xl text-stone-600 font-serif leading-relaxed max-w-xl mx-auto">
-                            You cannot think your way out of a feeling. You must locate it, listen to it, and transmute it.
-                            This Field Guide is designed to be used alongside the <strong>Adaptiv Web App</strong>.
+                            Repetition is the mother of transformation.
+                        </p>
+                        <p class="text-md text-stone-500 font-serif leading-relaxed max-w-xl mx-auto">
+                            We will not chop the experience into pieces. 
+                            Instead, for the next 7 days, you will run the <strong>Full Adaptiv Flow</strong> (Body &rarr; Mind &rarr; Action) every single day.
+                        </p>
+                        <p class="text-md text-stone-500 font-serif leading-relaxed max-w-xl mx-auto">
+                            Each day, you will bring a new <strong>Intent</strong> to the process. You will not just use the tool; you will master it layer by layer.
                         </p>
                         
                         <div class="bg-stone-100 p-8 rounded-2xl text-left max-w-lg mx-auto border border-stone-200 shadow-sm mt-8">
-                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest mb-4 text-stone-500">The Commitment</h3>
+                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest mb-4 text-stone-500">The Daily Commitment</h3>
                             <ol class="space-y-4 font-serif text-lg text-stone-800">
-                                <li class="flex items-start gap-3"><span class="text-gold-500">01.</span> Open the App daily.</li>
-                                <li class="flex items-start gap-3"><span class="text-gold-500">02.</span> Complete the full cycle (5 mins).</li>
-                                <li class="flex items-start gap-3"><span class="text-gold-500">03.</span> Write your insight here immediately.</li>
+                                <li class="flex items-start gap-3"><span class="text-gold-500">01.</span> Open the App.</li>
+                                <li class="flex items-start gap-3"><span class="text-gold-500">02.</span> Complete the Full Cycle (5 mins).</li>
+                                <li class="flex items-start gap-3"><span class="text-gold-500">03.</span> Journal the specific insight below.</li>
                             </ol>
                         </div>
                     </div>
@@ -205,8 +260,12 @@
                             <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Familiarity & Pattern Interrupt</p>
                         </div>
                         
+                        <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the <strong>Full Flow</strong> from start to finish. Don't overthink the inputs. Your goal is simply to reach the "Integration" card.</p>
+                        </div>
+                        
                         <p class="font-serif text-lg text-stone-700 leading-relaxed">
-                            Stress is a loop. To break it, we must introduce a new pattern. Today is not about being perfect or deep. It is simply about proving to your nervous system that you can stop the spinning.
+                            Stress is a loop. Today is simply about proving to your nervous system that you can stop the spinning.
                         </p>
 
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
@@ -215,24 +274,22 @@
                             <div class="mb-6 space-y-4">
                                 <div>
                                     <label class="flex justify-between text-sm text-stone-600 mb-2">
-                                        <span>How did you feel <strong>before</strong> opening the app?</span>
+                                        <span>Before Opening App (Stress Level)</span>
                                         <span id="val-before">${appState.journalEntries.day1.before}</span>
                                     </label>
                                     <input type="range" min="1" max="10" value="${appState.journalEntries.day1.before}" 
                                         oninput="updateDay1(this.value, 'before')"
                                         class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-stone-900">
-                                    <div class="flex justify-between text-[10px] text-stone-400 uppercase mt-1"><span>Stressed</span><span>Calm</span></div>
                                 </div>
                                 
                                 <div>
                                     <label class="flex justify-between text-sm text-stone-600 mb-2">
-                                        <span>How did you feel <strong>after</strong> the final card?</span>
+                                        <span>After Integration Card (Stress Level)</span>
                                         <span id="val-after">${appState.journalEntries.day1.after}</span>
                                     </label>
                                     <input type="range" min="1" max="10" value="${appState.journalEntries.day1.after}" 
                                         oninput="updateDay1(this.value, 'after')"
                                         class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-gold-500">
-                                    <div class="flex justify-between text-[10px] text-stone-400 uppercase mt-1"><span>Stressed</span><span>Calm</span></div>
                                 </div>
                             </div>
 
@@ -242,8 +299,8 @@
                         </div>
 
                         <div class="space-y-2">
-                            <label class="font-serif text-xl italic text-stone-800">Write your "New Truth" from today's session:</label>
-                            <textarea oninput="saveJournal('day1', 'truth', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-700 font-serif text-lg" placeholder="Today I realized...">${appState.journalEntries.day1.truth}</textarea>
+                            <label class="font-serif text-xl italic text-stone-800">Write your "New Truth" from the final card:</label>
+                            <textarea oninput="saveJournal('day1', 'truth', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[80px] journal-input resize-none text-stone-700 font-serif text-lg" placeholder="I am...">${appState.journalEntries.day1.truth}</textarea>
                         </div>
                     </div>
                 `
@@ -260,7 +317,7 @@
                         </div>
 
                         <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
-                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the Full Flow. When you reach "The Vessel," select the zone calling to you and close your eyes. Breathe into it for 60 full seconds before clicking "Next."</p>
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the <strong>Full Flow</strong>. When you reach <strong>"The Vessel,"</strong> do not rush. Select the zone calling to you and close your eyes. Breathe into it for 60 full seconds before clicking "Next."</p>
                         </div>
 
                         <div class="space-y-6">
@@ -289,7 +346,9 @@
                             <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Listening vs. Thinking</p>
                         </div>
 
-                        <p class="font-serif text-lg text-stone-700">The part of you that is anxious is not an enemy; it is a Protector. Today, we listen for the surprise.</p>
+                         <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the <strong>Full Flow</strong>. At <strong>"Parts Dialogue,"</strong> when you ask <em>"What are you protecting me from?"</em>, wait. Wait for an answer that surprises you.</p>
+                        </div>
 
                         <div class="space-y-6">
                             <div class="space-y-2">
@@ -321,13 +380,13 @@
                         </div>
 
                         <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
-                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> At "Breakthrough Laser," look at the question: <em>"What is the truth now?"</em> Write the rawest, most unpolished truth you can access.</p>
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the <strong>Full Flow</strong>. At <strong>"Breakthrough Laser,"</strong> look at the question: <em>"What is the truth now?"</em> Write the rawest, most unpolished truth you can access.</p>
                         </div>
 
                         <div class="grid md:grid-cols-2 gap-8">
                             <div class="space-y-2 bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
                                 <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-400">The Surface Story</label>
-                                <p class="text-xs text-stone-500 mb-2">What you told people/yourself.</p>
+                                <p class="text-xs text-stone-500 mb-2">What you told people/yourself initially.</p>
                                 <textarea oninput="saveJournal('day4', 'surface', this.value)" class="w-full bg-transparent border-b border-stone-200 focus:border-stone-900 focus:outline-none min-h-[150px] resize-none text-stone-700 font-serif text-lg italic" placeholder="I'm just stressed about the deadline...">${appState.journalEntries.day4.surface}</textarea>
                             </div>
                             
@@ -351,9 +410,9 @@
                             <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Capacity Expansion</p>
                         </div>
 
-                        <p class="font-serif text-lg text-stone-700 leading-relaxed">
-                            You cannot build a skyscraper on a shaky foundation. Today we expand your capacity to hold energy by slowing down.
-                        </p>
+                         <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the <strong>Full Flow</strong>. At <strong>"Regulation"</strong> (The Breath Circle), do not skip. Stay for 2 extra cycles. Sync your exhale perfectly with the visual.</p>
+                        </div>
 
                          <div class="flex justify-center py-8">
                             <div class="w-32 h-32 rounded-full border-4 border-stone-200 flex items-center justify-center animate-pulse">
@@ -377,6 +436,10 @@
                         <div class="border-l-2 border-gold-400 pl-6">
                             <h2 class="text-3xl font-serif italic text-stone-900">The Boldness</h2>
                             <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Breaking the Fear Threshold</p>
+                        </div>
+
+                         <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the <strong>Full Flow</strong>. At <strong>"Integration" (The Molt)</strong>, look at the "Action" field. Do not write a safe step. Commit to a bold step.</p>
                         </div>
 
                         <div class="bg-gold-50 p-6 rounded-xl border border-gold-100">
@@ -408,9 +471,9 @@
                             <p class="text-stone-500 text-sm uppercase tracking-widest mt-1">Intent: Embodiment & Identity Shift</p>
                         </div>
 
-                        <p class="font-serif text-lg text-stone-700 leading-relaxed">
-                            You are no longer the person who started this protocol. You have mapped the vessel, befriended the protector, and cleared the fog. You are now the Architect.
-                        </p>
+                        <div class="bg-stone-900 text-stone-300 p-6 rounded-xl">
+                            <p class="font-sans text-sm"><strong class="text-gold-400">App Mission:</strong> Run the <strong>Full Flow</strong>. At the <strong>"Priming"</strong> stage, stand up physically. Own the "New Truth" as your permanent reality.</p>
+                        </div>
                         
                         <div class="bg-stone-900 text-white p-10 rounded-2xl shadow-2xl text-center border border-stone-800 mt-8 mb-8 relative overflow-hidden">
                             <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl font-serif italic leading-none">A</div>
@@ -515,7 +578,7 @@
         function saveJournal(day, key, value) {
             appState.journalEntries[day][key] = value;
             // In a real app, save to localStorage here
-            // localStorage.setItem('adaptiv_journal', JSON.stringify(appState.journalEntries));
+            localStorage.setItem('adaptiv_journal', JSON.stringify(appState.journalEntries));
         }
 
         // Day 1 Specific Logic
@@ -583,6 +646,16 @@
         }
         
         mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+
+        // Load saved state if exists
+        const savedJournal = localStorage.getItem('adaptiv_journal');
+        if (savedJournal) {
+            try {
+                appState.journalEntries = JSON.parse(savedJournal);
+            } catch (e) {
+                console.error("Error loading journal", e);
+            }
+        }
 
         // Start
         init();
