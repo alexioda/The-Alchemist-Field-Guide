@@ -76,47 +76,16 @@
             line-height: 32px;
             padding: 8px 0;
         }
-
-        /* Login Overlay Transition */
-        #login-overlay {
-            transition: opacity 0.5s ease-out, visibility 0.5s;
-        }
-        #login-overlay.hidden-overlay {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
     </style>
 
     <!-- Chosen Palette: "The Alchemist" - Stone, Charcoal, Gold. -->
     <!-- Application Structure Plan: 
          - Updated Content: Now uses the "7 Cycles" strategy (Full Flow Daily).
-         - Security: Includes "GENESIS" passcode gate.
+         - Security: Removed (Honor System) for frictionless onboarding.
          - Interaction: Persistent local storage for journal entries. -->
 
 </head>
 <body class="bg-stone-50 text-stone-900 font-sans antialiased h-screen overflow-hidden flex flex-col md:flex-row">
-
-    <!-- LOGIN OVERLAY (Simple Gate) -->
-    <div id="login-overlay" class="fixed inset-0 bg-stone-900 z-[100] flex flex-col items-center justify-center p-6 text-center">
-        <div class="max-w-md w-full space-y-8 animate-enter">
-            <div>
-                <h1 class="font-serif text-4xl text-stone-50 italic">The Alchemist's Field Guide</h1>
-                <p class="text-xs uppercase tracking-[0.2em] text-gold-400 mt-2">Restricted Access</p>
-            </div>
-            
-            <div class="bg-stone-800 p-8 rounded-2xl border border-stone-700 shadow-2xl">
-                <p class="text-stone-400 text-sm mb-6 font-serif">Enter the Access Code provided in your purchase receipt.</p>
-                <input type="password" id="password-input" 
-                    class="w-full bg-stone-900 border-b border-stone-600 text-center text-stone-50 text-xl py-3 focus:outline-none focus:border-gold-400 font-serif placeholder:text-stone-700 transition-colors"
-                    placeholder="ENTER CODE">
-                <p id="error-msg" class="text-red-400 text-xs mt-4 opacity-0 transition-opacity">Incorrect Access Code</p>
-                <button onclick="checkPassword()" class="mt-8 w-full bg-stone-50 text-stone-900 py-3 rounded-full font-sans text-xs font-bold uppercase tracking-widest hover:bg-gold-400 transition-colors">
-                    Unlock Protocol
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Mobile Navigation Bar -->
     <div class="md:hidden bg-stone-900 text-stone-50 p-4 flex justify-between items-center z-50">
@@ -172,37 +141,6 @@
     </main>
 
     <script>
-        // --- AUTH LOGIC ---
-        const ACCESS_CODE = "GENESIS"; // Hardcoded simple protection
-        
-        function checkPassword() {
-            const input = document.getElementById('password-input');
-            const errorMsg = document.getElementById('error-msg');
-            
-            if (input.value.toUpperCase().trim() === ACCESS_CODE) {
-                localStorage.setItem('adaptiv_field_guide_access', 'granted');
-                document.getElementById('login-overlay').classList.add('hidden-overlay');
-            } else {
-                errorMsg.style.opacity = '1';
-                input.classList.add('border-red-500');
-                setTimeout(() => {
-                    errorMsg.style.opacity = '0';
-                    input.classList.remove('border-red-500');
-                }, 2000);
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('adaptiv_field_guide_access') === 'granted') {
-                document.getElementById('login-overlay').classList.add('hidden-overlay');
-            }
-            document.getElementById('password-input').addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    checkPassword();
-                }
-            });
-        });
-
         // --- DATA & STATE ---
         const appState = {
             currentStep: 0,
