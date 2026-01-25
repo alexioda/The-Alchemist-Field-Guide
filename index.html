@@ -74,6 +74,9 @@
             <div class="mt-12 pt-8 border-t border-white/5">
                 <p class="text-stone-500 text-[10px] mb-2 uppercase tracking-widest">Need Access?</p>
                 <a href="https://alexioda.gumroad.com/l/roxaxf" target="_blank" class="text-gold-400 text-[10px] uppercase tracking-widest hover:text-white transition-colors border-b border-gold-400/30 pb-1">Get the Cipher Code</a>
+                <div class="mt-6">
+                    <a href="https://liveadaptiv.com" class="text-stone-600 text-[9px] uppercase tracking-widest hover:text-stone-400 transition-colors">Return to Hub</a>
+                </div>
             </div>
         </div>
     </div>
@@ -98,8 +101,30 @@
 
         <nav class="space-y-1 flex-1" id="desktop-nav"></nav>
 
-        <div class="mt-8 pt-8 border-t border-stone-800">
-            <div class="flex items-center gap-3 opacity-60">
+        <div class="mt-auto pt-8 border-t border-stone-800">
+            <!-- Link to Hub -->
+            <a href="https://liveadaptiv.com" class="flex items-center gap-3 mb-4 group opacity-60 hover:opacity-100 transition-opacity">
+                <div class="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center text-stone-500 group-hover:text-white transition-colors">
+                    <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] uppercase tracking-widest text-stone-400 group-hover:text-white transition-colors">Ecosystem</p>
+                    <p class="text-[9px] text-stone-600">Return to Hub</p>
+                </div>
+            </a>
+
+            <!-- Link to Adaptiv App -->
+            <a href="https://app.liveadaptiv.com" target="_blank" class="flex items-center gap-3 mb-6 group opacity-80 hover:opacity-100 transition-opacity">
+                <div class="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center text-gold-500 group-hover:text-white transition-colors">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] uppercase tracking-widest text-gold-500 group-hover:text-white transition-colors">Daily Tool</p>
+                    <p class="text-[9px] text-stone-500">Launch Adaptiv App</p>
+                </div>
+            </a>
+
+            <div class="flex items-center gap-3 opacity-40">
                 <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                 <span class="text-[10px] uppercase tracking-widest">Protocol Active</span>
             </div>
@@ -540,7 +565,33 @@
             });
         }
 
-        // --- AUDIO ENGINE ---
+        // --- GATE LOGIC ---
+        var ACCESS_CODE = "GENESIS2026"; 
+        var PRODUCT_ID = "alchemist_guide_v1"; 
+
+        function initGate() {
+            const gate = document.getElementById('access-gate');
+            if (localStorage.getItem(PRODUCT_ID) === 'unlocked') {
+                gate.style.display = 'none';
+            }
+        }
+
+        function unlockGate() {
+            const input = document.getElementById('gate-pass');
+            const gate = document.getElementById('access-gate');
+            
+            if (input.value === ACCESS_CODE) {
+                localStorage.setItem(PRODUCT_ID, 'unlocked');
+                gate.style.opacity = '0';
+                setTimeout(() => gate.style.display = 'none', 700);
+            } else {
+                document.getElementById('gate-error').classList.remove('hidden');
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // --- AUDIO ENGINE (TTS) ---
         function speakText(text, ui) {
             window.speechSynthesis.cancel();
             var u = new SpeechSynthesisUtterance(text);
@@ -559,6 +610,7 @@
                 wave: document.getElementById('player-wave'), 
                 icon: document.getElementById('player-icon') 
             };
+            // Move bar up
             ui.bar.classList.remove('translate-y-[150%]');
             document.getElementById('player-title').innerText = "Coach's Guide";
             speakText(step.audioText, ui);
