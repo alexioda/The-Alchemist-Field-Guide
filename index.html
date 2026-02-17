@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Alchemist's Field Guide | Protocol Manual</title>
+    <title>The Alchemist's Field Guide | Master Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -23,7 +23,14 @@
                     },
                     colors: {
                         stone: { 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 300: '#d6d3d1', 400: '#a8a29e', 500: '#78716c', 600: '#57534e', 700: '#44403c', 800: '#292524', 900: '#1c1917' },
-                        gold: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f' }
+                        gold: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f' },
+                        danger: { 500: '#ef4444', 600: '#dc2626' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
                     }
                 }
             }
@@ -31,110 +38,98 @@
     </script>
 
     <style>
-        .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 250px; }
-        .fade-in { animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .journal-input { background-image: linear-gradient(transparent, transparent 31px, #e7e5e4 31px, #e7e5e4 32px, transparent 32px); background-size: 100% 32px; line-height: 32px; padding: 8px 0; }
         .accordion-content { transition: max-height 0.3s ease-out, opacity 0.3s ease-out; max-height: 0; opacity: 0; overflow: hidden; }
         .accordion-open { max-height: 800px; opacity: 1; }
         
-        /* Audio Wave Animation */
-        .loading-wave { display: inline-flex; gap: 3px; align-items: center; height: 12px; }
-        .loading-wave div { width: 3px; background: #fbbf24; animation: wave 1s infinite ease-in-out; border-radius: 10px; }
-        .loading-wave div:nth-child(2) { animation-delay: 0.1s; }
-        .loading-wave div:nth-child(3) { animation-delay: 0.2s; }
-        .loading-wave div:nth-child(4) { animation-delay: 0.3s; }
-        @keyframes wave { 0%, 100% { height: 4px; opacity: 0.5; } 50% { height: 16px; opacity: 1; } }
+        .breath-circle {
+            width: 200px; height: 200px;
+            background: #2C5F2D;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-family: 'Cormorant Garamond', serif; font-size: 1.5rem;
+            box-shadow: 0 0 40px rgba(44, 95, 45, 0.3);
+        }
+        .breathing .breath-circle { animation: breathCycle 8s infinite ease-in-out; }
+        @keyframes breathCycle {
+            0% { transform: scale(1); content: "Inhale"; opacity: 0.8; }
+            40% { transform: scale(1.3); opacity: 1; }
+            50% { transform: scale(1.35); }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
 
-        /* Print Styles - Cleans up the dark mode for paper */
         @media print {
             body { background-color: white; color: black; display: block; height: auto; overflow: visible; }
-            aside, #mobile-menu-btn, #footer-nav, #audio-player-bar, #access-gate { display: none !important; }
+            aside, #mobile-menu-btn, #footer-nav, #audio-player-bar, #access-gate, #panic-btn, .no-print { display: none !important; }
             main { margin-left: 0; width: 100%; max-width: 100%; padding: 0; overflow: visible; }
             .bg-stone-900 { background-color: white !important; color: black !important; border: 1px solid #ccc; }
             .text-stone-50, .text-stone-300, .text-white { color: black !important; }
             .journal-input { border: 1px solid #ddd; border-radius: 4px; padding: 10px; background-image: none; }
             .print-break { page-break-before: always; }
-            .print-only-header { display: block !important; text-align: center; margin-bottom: 30px; }
         }
     </style>
 </head>
 <body class="bg-stone-50 text-stone-900 font-sans antialiased h-screen overflow-hidden flex flex-col md:flex-row">
 
-    <!-- ================== START GATING SYSTEM ================== -->
+    <!-- PANIC BUTTON -->
+    <button id="panic-btn" onclick="togglePanicMode()" class="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[80] bg-danger-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform duration-300 group border-2 border-white/20">
+        <i data-lucide="life-buoy" class="w-6 h-6 animate-pulse"></i>
+        <span class="absolute right-full mr-4 bg-stone-900 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Crisis Mode</span>
+    </button>
+
+    <!-- CRISIS OVERLAY -->
+    <div id="crisis-overlay" class="fixed inset-0 bg-stone-950/95 z-[90] hidden flex-col items-center justify-center backdrop-blur-xl transition-opacity duration-500">
+        <div class="text-center">
+            <h2 class="text-white font-serif text-3xl mb-2">Hardware Reboot</h2>
+            <p class="text-stone-400 text-xs uppercase tracking-widest mb-10">Physiological Sigh Protocol</p>
+            <div class="breathing"><div class="breath-circle">Breathe</div></div>
+            <p class="text-white/50 mt-10 text-sm animate-pulse">Double Inhale (Nose) ... Long Exhale (Mouth)</p>
+            <button onclick="togglePanicMode()" class="mt-12 text-stone-500 hover:text-white border-b border-stone-700 pb-1 text-xs uppercase tracking-widest transition-colors">Exit Protocol</button>
+        </div>
+    </div>
+
+    <!-- ACCESS GATE -->
     <div id="access-gate" class="fixed inset-0 z-[100] bg-stone-950 flex flex-col items-center justify-center text-center px-6 transition-opacity duration-700">
         <div class="max-w-sm w-full">
             <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8 text-gold-400 border border-white/10">
                 <i data-lucide="lock" class="w-6 h-6"></i>
             </div>
-            
             <h1 class="font-serif text-4xl text-white italic mb-3">Restricted Access</h1>
             <p class="text-xs text-white/40 uppercase tracking-[0.2em] mb-10">Enter Protocol Cipher</p>
-            
-            <input type="password" id="gate-pass" placeholder="Enter Access Code" 
-                class="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-center text-white text-lg tracking-widest focus:outline-none focus:border-gold-500/50 transition-all mb-4 placeholder:text-white/10 font-serif">
-            
-            <button onclick="unlockGate()" 
-                class="w-full py-4 bg-white text-stone-900 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gold-400 transition-all">
-                Unlock Field Guide
-            </button>
-            
+            <input type="password" id="gate-pass" placeholder="ENTER CIPHER" class="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-center text-white text-lg tracking-widest focus:outline-none focus:border-gold-500/50 transition-all mb-4 placeholder:text-white/10 font-serif uppercase">
+            <button onclick="unlockGate()" class="w-full py-4 bg-white text-stone-900 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gold-400 transition-all">Unlock Field Guide</button>
             <p id="gate-error" class="text-red-400 text-xs mt-4 hidden uppercase tracking-widest animate-pulse">Incorrect Cipher</p>
-            
-            <div class="mt-12 pt-8 border-t border-white/5">
-                <p class="text-stone-500 text-[10px] mb-2 uppercase tracking-widest">Need Access?</p>
-                <a href="#" class="text-gold-400 text-[10px] uppercase tracking-widest hover:text-white transition-colors border-b border-gold-400/30 pb-1">Get the Cipher Code</a>
-            </div>
         </div>
     </div>
-    <!-- ================== END GATING SYSTEM ================== -->
 
     <!-- Mobile Header -->
     <div class="md:hidden bg-stone-900 text-stone-50 p-4 flex justify-between items-center z-50 shadow-md">
-        <span class="font-serif text-xl italic">Adaptiv Field Guide</span>
+        <div class="flex items-center gap-2">
+            <div class="w-6 h-6 bg-white text-stone-900 flex items-center justify-center font-serif italic text-sm">L</div>
+            <span class="font-serif text-lg italic">Alchemist Guide</span>
+        </div>
         <button id="mobile-menu-btn" class="text-gold-400 text-2xl leading-none">☰</button>
     </div>
 
-    <!-- Mobile Menu Overlay -->
     <div id="mobile-menu" class="fixed inset-0 bg-stone-900/95 z-40 hidden flex-col justify-center items-center space-y-6 backdrop-blur-sm"></div>
 
     <!-- Sidebar -->
     <aside class="hidden md:flex flex-col w-80 bg-stone-900 text-stone-300 h-full border-r border-stone-800 p-8 overflow-y-auto no-scrollbar flex-shrink-0">
         <div class="mb-12">
+            <div class="w-10 h-10 bg-white text-stone-900 flex items-center justify-center font-serif italic text-xl mb-6">L</div>
             <h1 class="font-serif text-4xl text-stone-50 italic leading-none mb-2">The<br>Alchemist's<br>Guide</h1>
             <div class="h-1 w-12 bg-gold-500 mb-4"></div>
-            <p class="text-[10px] uppercase tracking-[0.2em] text-stone-500">Manual of Operations</p>
+            <p class="text-[10px] uppercase tracking-[0.2em] text-stone-500">Master Edition</p>
         </div>
-
-        <nav class="space-y-1 flex-1" id="desktop-nav"></nav>
-
+        <nav class="space-y-2 flex-1" id="desktop-nav"></nav>
         <div class="mt-auto pt-8 border-t border-stone-800">
             <a href="https://liveadaptiv.com" class="flex items-center gap-3 mb-4 group opacity-60 hover:opacity-100 transition-opacity">
-                <div class="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center text-stone-500 group-hover:text-white transition-colors">
-                    <i data-lucide="layout-grid" class="w-4 h-4"></i>
-                </div>
-                <div>
-                    <p class="text-[10px] uppercase tracking-widest text-stone-400 group-hover:text-white transition-colors">Ecosystem</p>
-                    <p class="text-[9px] text-stone-600">Return to Hub</p>
-                </div>
+                <div class="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center text-stone-500 group-hover:text-white transition-colors"><i data-lucide="layout-grid" class="w-4 h-4"></i></div>
+                <div><p class="text-[10px] uppercase tracking-widest text-stone-400 group-hover:text-white transition-colors">Ecosystem</p><p class="text-[9px] text-stone-600">Return to Hub</p></div>
             </a>
-            
-            <a href="https://app.liveadaptiv.com" target="_blank" class="flex items-center gap-3 mb-6 group opacity-80 hover:opacity-100 transition-opacity">
-                <div class="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center text-gold-500 group-hover:text-white transition-colors">
-                    <i data-lucide="zap" class="w-4 h-4"></i>
-                </div>
-                <div>
-                    <p class="text-[10px] uppercase tracking-widest text-gold-500 group-hover:text-white transition-colors">Daily Tool</p>
-                    <p class="text-[9px] text-stone-500">Launch Adaptiv App</p>
-                </div>
-            </a>
-
-            <div class="flex items-center gap-3 opacity-40">
-                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span class="text-[10px] uppercase tracking-widest">Protocol Active</span>
-            </div>
+            <div class="flex items-center gap-3 opacity-40"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-[10px] uppercase tracking-widest">Protocol Active</span></div>
         </div>
     </aside>
 
@@ -142,26 +137,23 @@
     <main class="flex-1 h-full overflow-y-auto relative bg-stone-50" id="main-content">
         <div class="max-w-3xl mx-auto px-6 py-12 md:py-20 min-h-full flex flex-col pb-32">
             
-            <!-- Print Header -->
             <div class="hidden print-only-header">
                 <h1 class="font-serif text-4xl italic mb-2">The Alchemist's Field Guide</h1>
                 <p class="text-xs uppercase tracking-widest">Personal Protocol</p>
                 <div class="h-px w-full bg-stone-200 my-8"></div>
             </div>
 
-            <div id="content-container" class="flex-1 fade-in"></div>
+            <div id="content-container" class="flex-1 animate-fade-in"></div>
 
             <div class="mt-20 flex justify-between items-center border-t border-stone-200 pt-8 pb-8" id="footer-nav">
                 <button id="prev-btn" class="text-stone-400 hover:text-stone-900 font-serif italic text-lg transition-colors flex items-center gap-2 disabled:opacity-0 cursor-pointer">&larr; Previous</button>
-                <div class="h-1 flex-1 mx-4 bg-stone-200 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="h-full bg-gold-500 w-0 transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
-                </div>
+                <div class="h-1 flex-1 mx-4 bg-stone-200 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-gold-500 w-0 transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div></div>
                 <button id="next-btn" class="bg-stone-900 text-stone-50 px-8 py-3 rounded-full hover:bg-gold-600 hover:text-stone-900 transition-all font-sans text-xs font-bold tracking-[0.2em] uppercase shadow-lg transform hover:-translate-y-0.5">Next &rarr;</button>
             </div>
         </div>
     </main>
 
-    <!-- Audio Player (Sticky Footer) -->
+    <!-- Audio Player -->
     <div id="audio-player-bar" class="fixed bottom-0 md:bottom-6 md:left-auto md:right-6 md:w-96 w-full glass-panel md:rounded-2xl p-4 transform translate-y-[150%] transition-transform duration-500 z-[60] flex items-center justify-between border-t md:border border-gold-500/20 bg-stone-900/95 backdrop-blur-xl shadow-2xl">
         <div class="flex items-center gap-4">
             <div class="w-10 h-10 bg-gold-500/10 rounded-full flex items-center justify-center text-gold-400">
@@ -169,57 +161,72 @@
                  <i data-lucide="play" id="player-icon" class="w-4 h-4 fill-current"></i>
             </div>
             <div>
-                <p class="font-serif text-sm text-stone-200 italic" id="player-title">Coach's Guide</p>
+                <p class="font-serif text-sm text-stone-200 italic" id="player-title">Guide</p>
                 <p class="text-[9px] text-stone-500 uppercase tracking-widest" id="player-status">Ready</p>
             </div>
         </div>
-        <button onclick="stopAudio()" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors">
-            <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-        <!-- Audio Element (Hidden) -->
-        <audio id="real-audio-player" class="hidden"></audio>
+        <button onclick="stopAudio()" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
 
     <script>
-        // --- DATA & STATE ---
-        var ACCESS_CODE = "GENESIS2026"; 
-        var PRODUCT_ID = "alchemist_guide_v1"; 
+        // --- MASTER GATING CONFIG ---
+        const ACCESS_KEYS = { 
+            "GENESIS2026": "2030-01-01",  // Master Code
+            "DEMO": "2030-01-01", 
+            "MASTER": "2099-12-31" 
+        };
+        
+        var PRODUCT_ID = "alchemist_guide_final"; 
 
         var appState = {
             currentStep: 0,
             entries: {
                 cycle1: { before: 5, after: 8, archetype: "" },
                 cycle2: { sensation: "", message: "" },
-                cycle3: { thought: "", reframe: "" },
+                cycle3: { thought: "", reframe: "", failure_resume: "" },
                 cycle4: { question: "", answer: "" },
                 cycle5: { stillness: "" },
-                cycle6: { action: "", commitment: "", golden_shadow: "" },
+                cycle6: { action: "", commitment: "", golden_shadow: "", shadow_contract: "" },
                 cycle7: { identity: "" }
             }
         };
 
-        // --- HELPER: Dynamic Archetype Prompts ---
         function getArchetypePrompt() {
             const arc = appState.entries.cycle1.archetype;
-            if (!arc) return "I keep thinking that...";
-            if (arc === "The Rusher") return "The Rusher says: 'There isn't enough time.' I keep thinking that...";
-            if (arc === "The Freezer") return "The Freezer says: 'I can't handle this.' I keep thinking that...";
-            if (arc === "The Fixer") return "The Fixer says: 'It's all on me.' I keep thinking that...";
+            if (arc === "The Rusher") return "As a Rusher, I tell myself there isn't enough time. The truth is...";
+            if (arc === "The Freezer") return "As a Freezer, I tell myself I can't handle this. The truth is...";
+            if (arc === "The Fixer") return "As a Fixer, I tell myself I must save everyone. The truth is...";
             return "I keep thinking that...";
         }
 
-        // --- CONTENT HELPERS ---
-        var createAccordion = (title, content) => `
-            <div class="mt-6 border border-stone-200 rounded-lg overflow-hidden">
-                <button onclick="toggleAccordion(this)" class="w-full flex justify-between items-center p-4 bg-stone-50 hover:bg-stone-100 transition-colors text-left group">
-                    <span class="font-sans text-xs font-bold uppercase tracking-widest text-stone-600 flex items-center gap-2">
-                        <span class="text-gold-500 group-hover:scale-125 transition-transform">✦</span> ${title}
-                    </span>
-                    <span class="text-stone-400 transform transition-transform duration-300">▼</span>
-                </button>
-                <div class="accordion-content bg-white p-6 text-stone-600 font-serif leading-relaxed text-sm border-t border-stone-100">
-                    ${content}
+        var createAudioSection = (title, audioText) => `
+            <div class="flex flex-col items-end border-b border-stone-200 pb-6 mb-10 no-print">
+                <div class="flex justify-between w-full items-end">
+                    <div>
+                        <h2 class="text-5xl md:text-6xl font-serif italic text-stone-900 leading-none">${title}</h2>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-gold-600 mb-2 mt-2 block">Audio Briefing</span>
+                    </div>
+                    <button onclick="playSectionAudio()" class="p-4 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors flex items-center justify-center gap-2 group shadow-sm">
+                        <i data-lucide="headphones" class="w-5 h-5 text-stone-700 group-hover:text-stone-900"></i>
+                        <span class="hidden md:inline text-[10px] font-bold uppercase tracking-widest text-stone-600 group-hover:text-stone-900">Listen</span>
+                    </button>
                 </div>
+                <div class="mt-3 w-full text-right">
+                    <button onclick="toggleTranscript(this)" class="text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-900 transition-colors border-b border-stone-200 hover:border-stone-900 pb-0.5">Read Transcript</button>
+                </div>
+                <div class="transcript-box hidden w-full text-left mt-6 p-6 bg-stone-50 rounded-xl border-l-2 border-gold-400 text-stone-600 font-serif italic text-lg leading-relaxed">
+                    "${audioText}"
+                </div>
+            </div>
+        `;
+
+        var createConceptBox = (tag, title, text) => `
+            <div class="bg-stone-50 p-8 rounded-xl border-l-4 border-stone-900 mb-12">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="px-2 py-1 bg-stone-200 text-stone-600 text-[10px] font-bold uppercase tracking-widest rounded">${tag}</span>
+                    <h3 class="font-serif text-2xl italic text-stone-900">${title}</h3>
+                </div>
+                <p class="text-stone-600 leading-relaxed font-serif text-lg">${text}</p>
             </div>
         `;
 
@@ -228,40 +235,23 @@
                 id: 'intro',
                 title: "Protocol Overview",
                 icon: "◉",
-                audioUrl: "https://your-audio-host.com/intro.mp3", 
-                audioText: "Welcome to the Alchemist's Field Guide. Let's begin.",
+                audioText: "Welcome to the Master Edition. This is your Operating System. We are here to rewrite the code of your stress response. Let's begin.",
                 render: () => `
-                    <div class="text-center space-y-8">
-                        <span class="text-xs font-bold tracking-[0.3em] uppercase text-gold-600 border border-gold-200 px-3 py-1 rounded-full">The Architecture</span>
-                        <h2 class="text-4xl md:text-6xl font-serif italic text-stone-900 leading-none">The Seven<br>Cycles.</h2>
+                    <div class="text-center space-y-8 animate-fade-in">
+                        <span class="inline-block py-1 px-3 border border-stone-300 rounded-full text-[10px] uppercase tracking-[0.2em] text-stone-500">Master Edition</span>
+                        <h2 class="text-5xl md:text-7xl font-serif italic text-stone-900 leading-none">The Seven<br>Cycles.</h2>
                         <div class="w-16 h-1 bg-gold-400 mx-auto"></div>
-                        
-                        <div class="flex justify-center mt-6">
-                            <button onclick="playSectionAudio()" class="flex items-center gap-3 px-6 py-2 bg-stone-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gold-600 hover:text-stone-900 transition-all">
+                        <div class="flex flex-col items-center gap-2 mt-8 no-print">
+                            <button onclick="playSectionAudio()" class="flex items-center gap-3 px-8 py-3 bg-stone-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gold-500 hover:text-stone-900 transition-all shadow-lg hover:-translate-y-1">
                                 <i data-lucide="play" class="w-4 h-4"></i> Listen to Overview
                             </button>
                         </div>
-
-                        <p class="text-lg text-stone-600 font-serif leading-relaxed max-w-xl mx-auto">
+                        <p class="text-xl text-stone-500 font-serif leading-relaxed max-w-xl mx-auto mt-12 font-light">
                             You are not here to "fix" yourself. You are here to learn the mechanics of your own energy.
                         </p>
-                        
-                        <div class="grid md:grid-cols-3 gap-4 text-left mt-12">
-                            <div class="p-6 bg-white border border-stone-200 rounded-xl shadow-sm">
-                                <div class="text-2xl mb-2">⚡</div>
-                                <h3 class="font-bold text-xs uppercase tracking-widest mb-2">The Biometrics</h3>
-                                <p class="text-sm text-stone-500">We do not assume stress. We measure it. Every cycle begins with a scan.</p>
-                            </div>
-                            <div class="p-6 bg-white border border-stone-200 rounded-xl shadow-sm">
-                                <div class="text-2xl mb-2">⚖️</div>
-                                <h3 class="font-bold text-xs uppercase tracking-widest mb-2">The Fork</h3>
-                                <p class="text-sm text-stone-500">Stress hits the <strong>Body</strong> (Weight) or the <strong>Mind</strong> (Noise). You will learn to treat them differently.</p>
-                            </div>
-                            <div class="p-6 bg-white border border-stone-200 rounded-xl shadow-sm">
-                                <div class="text-2xl mb-2">🔥</div>
-                                <h3 class="font-bold text-xs uppercase tracking-widest mb-2">The Alchemy</h3>
-                                <p class="text-sm text-stone-500">We do not calm down. We transform friction into fuel for action.</p>
-                            </div>
+                        <div class="bg-red-50 border border-red-100 p-4 rounded-lg inline-block mx-auto mt-8">
+                            <p class="text-xs text-red-800 font-bold uppercase tracking-widest flex items-center gap-2 justify-center"><i data-lucide="life-buoy" class="w-4 h-4"></i> Pro Tip</p>
+                            <p class="text-sm text-red-600 mt-1">If you are in crisis, use the Panic Button (Bottom Right).</p>
                         </div>
                     </div>
                 `
@@ -270,228 +260,170 @@
                 id: 'cycle1',
                 title: "Cycle 01: Initiation",
                 icon: "01",
-                audioUrl: "", // Paste real MP3 link here
-                audioText: "Cycle 1. The Anchor. Establish your baseline.",
+                audioText: "Cycle 1. The Anchor. Establish your baseline. We cannot change what we do not measure.",
                 render: () => `
-                    <div class="space-y-8">
-                        <div class="flex justify-between items-end border-b border-stone-300 pb-4">
-                            <div>
-                                <h2 class="text-5xl font-serif italic text-stone-900">The Anchor</h2>
-                                <span class="text-xs font-bold uppercase tracking-widest text-gold-600 mb-2">Cycle 01</span>
-                            </div>
-                            <button onclick="playSectionAudio()" class="p-3 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors"><i data-lucide="headphones" class="w-5 h-5 text-stone-700"></i></button>
-                        </div>
+                    <div class="space-y-12 animate-fade-in">
+                        ${createAudioSection("The Anchor", "Cycle 1. The Anchor. Establish your baseline. We cannot change what we do not measure. By naming the stress pattern, you separate your identity from the reaction.")}
                         
-                        <p class="font-serif text-xl text-stone-700 leading-relaxed">
-                            The first step in alchemy is locating the material. How does your stress manifest today?
-                        </p>
+                        ${createConceptBox("The Logic", "Pattern Recognition", "In complex systems theory, you cannot stabilize a system until you identify the oscillation. Humans are systems. Your stress isn't random; it follows an Archetype. Identifying the Archetype reduces the 'Allostatic Load' on your brain immediately.")}
 
-                        <!-- DYNAMIC ARCHETYPE SELECTOR -->
-                        <div class="bg-stone-50 p-6 rounded-xl border border-stone-200">
-                            <p class="text-xs font-bold uppercase tracking-widest text-stone-500 mb-4">Select Your Archetype (This adjusts your path)</p>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <button onclick="setArchetype('The Rusher', this)" class="arch-btn p-4 bg-white border border-stone-200 rounded-lg hover:border-gold-400 hover:shadow-md transition-all text-left ${appState.entries.cycle1.archetype === 'The Rusher' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}">
-                                    <span class="block font-bold text-stone-900 mb-1">The Rusher</span>
-                                    <span class="text-xs text-stone-500">"I don't have time." Anxiety, speed.</span>
-                                </button>
-                                <button onclick="setArchetype('The Freezer', this)" class="arch-btn p-4 bg-white border border-stone-200 rounded-lg hover:border-gold-400 hover:shadow-md transition-all text-left ${appState.entries.cycle1.archetype === 'The Freezer' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}">
-                                    <span class="block font-bold text-stone-900 mb-1">The Freezer</span>
-                                    <span class="text-xs text-stone-500">"I'm overwhelmed." Paralysis, fog.</span>
-                                </button>
-                                <button onclick="setArchetype('The Fixer', this)" class="arch-btn p-4 bg-white border border-stone-200 rounded-lg hover:border-gold-400 hover:shadow-md transition-all text-left ${appState.entries.cycle1.archetype === 'The Fixer' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}">
-                                    <span class="block font-bold text-stone-900 mb-1">The Fixer</span>
-                                    <span class="text-xs text-stone-500">"I have to save everyone." Over-functioning.</span>
-                                </button>
+                        <div class="bg-stone-50 p-8 rounded-2xl border border-stone-200">
+                            <p class="text-xs font-bold uppercase tracking-widest text-stone-400 mb-6">Select Your Archetype (Dynamic Intelligence)</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <button onclick="setArchetype('The Rusher', this)" class="arch-btn p-6 bg-white border border-stone-200 rounded-xl hover:border-gold-400 hover:shadow-lg transition-all text-left ${appState.entries.cycle1.archetype === 'The Rusher' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}"><span class="block font-serif text-xl italic text-stone-900 mb-2">The Rusher</span><span class="text-xs text-stone-500">"I don't have time." Anxiety.</span></button>
+                                <button onclick="setArchetype('The Freezer', this)" class="arch-btn p-6 bg-white border border-stone-200 rounded-xl hover:border-gold-400 hover:shadow-lg transition-all text-left ${appState.entries.cycle1.archetype === 'The Freezer' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}"><span class="block font-serif text-xl italic text-stone-900 mb-2">The Freezer</span><span class="text-xs text-stone-500">"I'm overwhelmed." Paralysis.</span></button>
+                                <button onclick="setArchetype('The Fixer', this)" class="arch-btn p-6 bg-white border border-stone-200 rounded-xl hover:border-gold-400 hover:shadow-lg transition-all text-left ${appState.entries.cycle1.archetype === 'The Fixer' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}"><span class="block font-serif text-xl italic text-stone-900 mb-2">The Fixer</span><span class="text-xs text-stone-500">"I have to save everyone."</span></button>
                             </div>
                         </div>
 
                         <div class="bg-white p-8 rounded-2xl shadow-lg border border-stone-100">
-                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest mb-6 text-stone-400">The Shift Metric</h3>
-                            <div class="grid grid-cols-2 gap-8 mb-8">
-                                <div>
-                                    <label class="block text-xs uppercase tracking-widest text-stone-500 mb-2">Entry State</label>
-                                    <input type="range" min="1" max="10" value="${appState.entries.cycle1.before}" oninput="updateCycle1(this.value, 'before')" class="w-full accent-stone-900">
-                                    <div class="text-3xl font-serif italic text-stone-900 mt-2" id="val-before">${appState.entries.cycle1.before}</div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs uppercase tracking-widest text-stone-500 mb-2">Exit State</label>
-                                    <input type="range" min="1" max="10" value="${appState.entries.cycle1.after}" oninput="updateCycle1(this.value, 'after')" class="w-full accent-gold-500">
-                                    <div class="text-3xl font-serif italic text-gold-600 mt-2" id="val-after">${appState.entries.cycle1.after}</div>
+                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest mb-8 text-stone-400">Baseline Audit</h3>
+                            <div class="mb-8">
+                                <label class="block text-xs uppercase tracking-widest text-stone-500 mb-4">Current Stress Load (Subjective Units of Distress)</label>
+                                <input type="range" min="1" max="10" value="${appState.entries.cycle1.before}" oninput="updateCycle1(this.value, 'before')" class="w-full accent-stone-900 cursor-pointer">
+                                <div class="flex justify-between mt-2">
+                                    <span class="text-xs text-stone-400">1 (Zen)</span>
+                                    <span class="text-4xl font-serif italic text-stone-900" id="val-before">${appState.entries.cycle1.before}</span>
+                                    <span class="text-xs text-stone-400">10 (Panic)</span>
                                 </div>
                             </div>
-                            <div class="chart-container"><canvas id="c1Chart"></canvas></div>
                         </div>
-                    </div>
-                `
+                    </div>`
             },
             {
                 id: 'cycle2',
                 title: "Cycle 02: Somatic Map",
                 icon: "02",
-                audioText: "Cycle 2. The Somatic Map. Where does the tension live?",
+                audioText: "Cycle 2. The Somatic Map.",
                 render: () => `
-                    <div class="space-y-8">
-                        <div class="flex justify-between items-end border-b border-stone-300 pb-4">
-                            <div>
-                                <h2 class="text-5xl font-serif italic text-stone-900">The Body</h2>
-                                <span class="text-xs font-bold uppercase tracking-widest text-gold-600 mb-2">Cycle 02</span>
-                            </div>
-                            <button onclick="playSectionAudio()" class="p-3 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors"><i data-lucide="headphones" class="w-5 h-5 text-stone-700"></i></button>
-                        </div>
+                    <div class="space-y-12 animate-fade-in">
+                        ${createAudioSection("The Body", "Cycle 2. The Somatic Map. Emotions are biological events. When you connect with the body, do not rush.")}
                         
-                        <div class="bg-stone-100 p-6 rounded-lg border-l-4 border-stone-900">
-                            <p class="font-sans text-xs font-bold uppercase tracking-widest text-stone-500 mb-2">Protocol Instruction</p>
-                            <p class="font-serif text-lg">At the Source screen, choose <strong>"The Body"</strong>. Allow yourself to identify where the weight lives physically.</p>
+                        ${createConceptBox("The Science", "Interoception", "This is your brain's ability to sense the internal state of the body. Research shows that high Interoceptive Awareness correlates with emotional regulation. By locating the sensation, you shift brain activity from the Amygdala (Fear) to the Insula (Observation).")}
+                        
+                        <div class="bg-stone-50 border border-stone-200 p-8 rounded-xl text-center">
+                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-stone-500 mb-6">Step 1: The Scan</h3>
+                            <p class="font-serif text-xl italic text-stone-800 mb-8">"Close your eyes. Scan your body from head to toe. Where is the friction living right now?"</p>
+                            
+                            <div class="flex justify-center">
+                                <svg width="150" height="300" viewBox="0 0 100 200" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
+                                    <path d="M50 10 C 60 10, 65 15, 65 25 C 65 30, 60 35, 50 35 C 40 35, 35 30, 35 25 C 35 15, 40 10, 50 10 M50 35 L 50 80 M50 80 L 20 120 M50 80 L 80 120 M20 45 L 80 45" stroke="#a8a29e" fill="none" stroke-width="1.5" />
+                                    <circle cx="50" cy="25" r="15" fill="transparent" class="cursor-pointer hover:fill-gold-500/30 transition-colors" onclick="selectZone(this)" />
+                                    <rect x="35" y="40" width="30" height="25" fill="transparent" class="cursor-pointer hover:fill-gold-500/30 transition-colors" onclick="selectZone(this)" />
+                                    <rect x="35" y="65" width="30" height="15" fill="transparent" class="cursor-pointer hover:fill-gold-500/30 transition-colors" onclick="selectZone(this)" />
+                                </svg>
+                            </div>
+                            <p class="text-xs text-stone-400 mt-4 uppercase tracking-widest">Click the area to lock signal</p>
                         </div>
 
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="space-y-6">
-                                <div>
-                                    <label class="font-serif text-xl text-stone-800 block mb-2">Describe the texture (color, temp, weight).</label>
-                                    <textarea oninput="saveEntry('cycle2', 'sensation', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[80px] journal-input resize-none text-stone-700 font-serif text-lg">${appState.entries.cycle2.sensation}</textarea>
-                                </div>
-                                <div>
-                                    <label class="font-serif text-xl text-stone-800 block mb-2">If this part had a voice, what is its warning?</label>
-                                    <textarea oninput="saveEntry('cycle2', 'message', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[80px] journal-input resize-none text-stone-700 font-serif text-lg">${appState.entries.cycle2.message}</textarea>
-                                </div>
+                        <div class="grid md:grid-cols-2 gap-12">
+                            <div class="space-y-8">
+                                <div><label class="font-serif text-2xl text-stone-900 italic block mb-4">Step 2: Describe the texture (color, temp, weight).</label><textarea oninput="saveEntry('cycle2', 'sensation', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-600 font-serif text-xl" placeholder="It feels heavy, like a gray stone...">${appState.entries.cycle2.sensation}</textarea></div>
+                                <div><label class="font-serif text-2xl text-stone-900 italic block mb-4">Step 3: If this part had a voice, what is its warning?</label><textarea oninput="saveEntry('cycle2', 'message', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-600 font-serif text-xl" placeholder="It is saying: 'You are not safe yet'">${appState.entries.cycle2.message}</textarea></div>
                             </div>
-                            <div class="bg-white border border-stone-200 p-6 rounded-xl">
-                                <h4 class="font-bold text-xs uppercase tracking-widest text-stone-400 mb-4">Somatic Decoder</h4>
-                                <ul class="space-y-3 text-sm text-stone-600">
-                                    <li class="flex gap-3"><span class="text-gold-500 font-bold">Chest</span> <span>Grief, Protection, Heartbreak.</span></li>
-                                    <li class="flex gap-3"><span class="text-gold-500 font-bold">Throat</span> <span>Unspoken truth, stifled creativity.</span></li>
-                                    <li class="flex gap-3"><span class="text-gold-500 font-bold">Gut</span> <span>Fear, Intuition, "Survival" instinct.</span></li>
-                                </ul>
-                            </div>
+                            <div class="bg-white border border-stone-200 p-8 rounded-2xl shadow-sm h-fit"><h4 class="font-bold text-xs uppercase tracking-widest text-stone-400 mb-6">Somatic Decoder</h4><ul class="space-y-4 text-sm text-stone-600 font-serif text-lg"><li class="flex gap-4 items-baseline border-b border-stone-100 pb-3"><span class="text-gold-600 font-bold uppercase text-xs tracking-widest w-20">Chest</span> <span>Grief, Protection.</span></li><li class="flex gap-4 items-baseline border-b border-stone-100 pb-3"><span class="text-gold-600 font-bold uppercase text-xs tracking-widest w-20">Throat</span> <span>Unspoken truth.</span></li><li class="flex gap-4 items-baseline"><span class="text-gold-600 font-bold uppercase text-xs tracking-widest w-20">Gut</span> <span>Fear, Intuition.</span></li></ul></div>
                         </div>
-                    </div>
-                `
+                    </div>`
             },
             {
                 id: 'cycle3',
                 title: "Cycle 03: The Filter",
                 icon: "03",
-                audioText: "Cycle 3. The Filter. We are hunting for loops. Catch the loop, and write down the absolute fact.",
+                audioText: "Cycle 3. The Filter. We are hunting for loops.",
                 render: () => `
-                    <div class="space-y-8">
-                         <div class="flex justify-between items-end border-b border-stone-300 pb-4">
-                            <div>
-                                <h2 class="text-5xl font-serif italic text-stone-900">The Mind</h2>
-                                <span class="text-xs font-bold uppercase tracking-widest text-gold-600 mb-2">Cycle 03</span>
-                            </div>
-                            <button onclick="playSectionAudio()" class="p-3 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors"><i data-lucide="headphones" class="w-5 h-5 text-stone-700"></i></button>
-                        </div>
+                    <div class="space-y-12 animate-fade-in">
+                         ${createAudioSection("The Mind", "Cycle 3. The Filter. We are hunting for loops. Catch the loop, and write down the absolute fact.")}
 
-                        <!-- DYNAMIC PROMPT -->
+                        ${createConceptBox("The Psychology", "Cognitive Defusion", "Your thoughts are not facts; they are secretions of the brain. When you write a thought down, you externalize it. You detach. This is called Cognitive Defusion. It turns 'I am failing' into 'I am having the thought that I am failing.'")}
+
                         <div class="grid md:grid-cols-2 gap-8">
-                            <div class="p-6 border border-stone-200 rounded-xl bg-stone-50">
-                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-400 block mb-2">The Loop (Assumption)</label>
-                                <p class="text-xs text-gold-600 mb-2 font-bold uppercase tracking-widest">Archetype: ${appState.entries.cycle1.archetype || "General"}</p>
-                                <textarea oninput="saveEntry('cycle3', 'thought', this.value)" class="w-full bg-transparent border-b border-stone-200 focus:border-stone-900 outline-none h-32 resize-none text-stone-600 font-serif text-lg italic mt-2" placeholder="${getArchetypePrompt()}">${appState.entries.cycle3.thought}</textarea>
+                            <div class="p-8 border border-stone-200 rounded-2xl bg-stone-50">
+                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-400 block mb-4">The Loop (Assumption)</label>
+                                <p class="text-[10px] text-gold-600 mb-4 font-bold uppercase tracking-widest border border-gold-200 inline-block px-2 py-1 rounded">Archetype: ${appState.entries.cycle1.archetype || "General"}</p>
+                                <textarea oninput="saveEntry('cycle3', 'thought', this.value)" class="w-full bg-transparent border-b border-stone-200 focus:border-stone-900 outline-none h-40 resize-none text-stone-600 font-serif text-xl italic leading-relaxed" placeholder="${getArchetypePrompt()}">${appState.entries.cycle3.thought}</textarea>
                             </div>
-                            <div class="p-6 bg-stone-900 rounded-xl text-stone-300">
-                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-gold-500 block">The Fact (Data)</label>
-                                <textarea oninput="saveEntry('cycle3', 'reframe', this.value)" class="w-full bg-transparent border-b border-stone-700 focus:border-gold-500 outline-none h-32 resize-none text-white font-serif text-lg mt-2" placeholder="The absolute truth is...">${appState.entries.cycle3.reframe}</textarea>
+                            <div class="p-8 bg-stone-900 rounded-2xl text-stone-300 shadow-xl">
+                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-gold-500 block mb-4">The Fact (Data)</label>
+                                <textarea oninput="saveEntry('cycle3', 'reframe', this.value)" class="w-full bg-transparent border-b border-stone-700 focus:border-gold-500 outline-none h-40 resize-none text-white font-serif text-xl leading-relaxed" placeholder="The absolute truth is...">${appState.entries.cycle3.reframe}</textarea>
                             </div>
                         </div>
-                    </div>
-                `
+                        
+                        <div class="mt-12 bg-red-50 p-8 rounded-2xl border border-red-100">
+                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-red-500 mb-6">The Failure Resume (Alchemy)</h3>
+                            <p class="text-stone-600 font-serif text-lg mb-6">List one major failure. Now, write the "Asset" it gave you (Resilience, Knowledge, Humility).</p>
+                            <textarea oninput="saveEntry('cycle3', 'failure_resume', this.value)" class="w-full bg-transparent border-b border-red-200 focus:border-red-500 outline-none h-24 resize-none text-stone-800 font-serif text-xl" placeholder="Failure: ... | Asset Gained: ...">${appState.entries.cycle3.failure_resume || ''}</textarea>
+                        </div>
+                    </div>`
             },
             {
                 id: 'cycle4',
-                title: "Cycle 04: The Pivot",
+                title: "Cycle 04: Energy Leadership",
                 icon: "04",
-                audioText: "Cycle 4. The Pivot. Answer the question that stings.",
+                audioText: "Cycle 4. Energy Leadership. Batman vs Yoda.",
                 render: () => `
-                    <div class="space-y-8">
-                         <div class="flex justify-between items-end border-b border-stone-300 pb-4">
-                            <div>
-                                <h2 class="text-5xl font-serif italic text-stone-900">The Pivot</h2>
-                                <span class="text-xs font-bold uppercase tracking-widest text-gold-600 mb-2">Cycle 04</span>
+                    <div class="space-y-12 animate-fade-in">
+                         ${createAudioSection("The Energy", "Cycle 4. Energy Leadership. Think of it this way: Batman is Level 2 Energy (Force/Anger). Yoda is Level 5 Energy (Opportunity/Calm). Both are powerful, but only one is sustainable.")}
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="p-8 bg-stone-100 rounded-2xl border-l-4 border-stone-500">
+                                <h4 class="font-bold text-xl mb-2 text-stone-800">The Force (Level 2)</h4>
+                                <p class="text-sm text-stone-500 mb-4">Like Batman. Driven by conflict, justice, and anger. Gets results but leaves you exhausted.</p>
                             </div>
-                            <button onclick="playSectionAudio()" class="p-3 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors"><i data-lucide="headphones" class="w-5 h-5 text-stone-700"></i></button>
-                        </div>
-                        <div class="space-y-6 pt-4">
-                            <div>
-                                <label class="font-serif text-xl text-stone-800 block mb-2">Write down the question that stopped you in your tracks:</label>
-                                <div class="p-4 bg-stone-100 rounded-lg italic text-stone-600">
-                                    "<input type="text" oninput="saveEntry('cycle4', 'question', this.value)" value="${appState.entries.cycle4.question}" class="bg-transparent w-full outline-none" placeholder="...">"
-                                </div>
-                            </div>
-                            <div>
-                                <label class="font-serif text-xl text-stone-800 block mb-2">Your honest answer:</label>
-                                <textarea oninput="saveEntry('cycle4', 'answer', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[80px] journal-input resize-none text-stone-700 font-serif text-lg">${appState.entries.cycle4.answer}</textarea>
+                            <div class="p-8 bg-gold-50 rounded-2xl border-l-4 border-gold-500">
+                                <h4 class="font-bold text-xl mb-2 text-stone-800">The Flow (Level 5)</h4>
+                                <p class="text-sm text-stone-500 mb-4">Like Yoda. Driven by purpose, opportunity, and peace. Gets better results with zero burnout.</p>
                             </div>
                         </div>
-                    </div>
-                `
+
+                        <div class="space-y-8 mt-8">
+                            <div><label class="font-serif text-2xl text-stone-900 italic block mb-4">Where are you operating?</label><textarea oninput="saveEntry('cycle4', 'answer', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-600 font-serif text-xl">${appState.entries.cycle4.answer}</textarea></div>
+                        </div>
+                    </div>`
             },
             {
                 id: 'cycle5',
                 title: "Cycle 05: The Void",
                 icon: "05",
-                audioText: "Cycle 5. The Void. Wait for the ripple.",
+                audioText: "Cycle 5. The Void.",
                 render: () => `
-                    <div class="space-y-8">
-                         <div class="flex justify-between items-end border-b border-stone-300 pb-4">
-                            <div>
-                                <h2 class="text-5xl font-serif italic text-stone-900">The Void</h2>
-                                <span class="text-xs font-bold uppercase tracking-widest text-gold-600 mb-2">Cycle 05</span>
-                            </div>
-                            <button onclick="playSectionAudio()" class="p-3 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors"><i data-lucide="headphones" class="w-5 h-5 text-stone-700"></i></button>
-                        </div>
-                        <div class="flex justify-center py-8">
-                            <div class="w-32 h-32 rounded-full border-2 border-stone-200 flex items-center justify-center animate-pulse">
-                                <div class="w-24 h-24 rounded-full bg-stone-100 flex items-center justify-center">
-                                    <span class="font-serif italic text-stone-400">Stillness</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="font-serif text-xl text-stone-800 block mb-2">In the silence, what became clear?</label>
-                            <textarea oninput="saveEntry('cycle5', 'stillness', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-700 font-serif text-lg">${appState.entries.cycle5.stillness}</textarea>
-                        </div>
-                    </div>
-                `
+                <div class="space-y-12 animate-fade-in">
+                    ${createAudioSection("The Void", "Cycle 5. The Void. Wait for the ripple.")}
+                    
+                    ${createConceptBox("The Science", "Default Mode Network", "When you stop 'doing', your brain switches to the Default Mode Network (DMN). This is where creativity and insight happen. But we are addicted to the Task Positive Network (Doing). Silence feels uncomfortable because it is a dopamine withdrawal. Stay in the withdrawal until the insight comes.")}
+
+                    <div class="flex justify-center py-12"><div class="w-40 h-40 rounded-full border border-stone-200 flex items-center justify-center animate-pulse"><div class="w-32 h-32 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center shadow-inner"><span class="font-serif italic text-2xl text-stone-400">Stillness</span></div></div></div>
+                    <div><label class="font-serif text-2xl text-stone-900 italic block mb-4">In the silence, what became clear?</label><textarea oninput="saveEntry('cycle5', 'stillness', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[120px] journal-input resize-none text-stone-600 font-serif text-xl">${appState.entries.cycle5.stillness}</textarea></div>
+                </div>`
             },
             {
                 id: 'cycle6',
                 title: "Cycle 06: Output & Shadow",
                 icon: "06",
-                audioText: "Cycle 6. The Output. Commit to a bold step. But first, reclaim your Gold.",
+                audioText: "Cycle 6. Shadow Work.",
                 render: () => `
-                    <div class="space-y-12">
-                         <div class="flex justify-between items-end border-b border-stone-300 pb-4">
-                            <div>
-                                <h2 class="text-5xl font-serif italic text-stone-900">The Output</h2>
-                                <span class="text-xs font-bold uppercase tracking-widest text-gold-600 mb-2">Cycle 06</span>
-                            </div>
-                            <button onclick="playSectionAudio()" class="p-3 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors"><i data-lucide="headphones" class="w-5 h-5 text-stone-700"></i></button>
-                        </div>
+                    <div class="space-y-16 animate-fade-in">
+                         ${createAudioSection("The Shadow", "Cycle 6. The Shadow. We must break the unconscious contract.")}
+                        
+                         ${createConceptBox("The Psychology", "Jungian Shadow", "Carl Jung taught that the 'Shadow' is not just evil; it is everything we have repressed. This includes your 'Golden Shadow'—your power, your genius, your voice. You projected it onto others because you were told it was 'too much'. It is time to take it back.")}
 
-                        <!-- THE GOLDEN SHADOW (NEW) -->
-                        <div class="bg-stone-900 text-stone-200 p-8 rounded-xl border border-stone-800 relative overflow-hidden">
-                            <div class="absolute -top-10 -right-10 w-40 h-40 bg-gold-500 rounded-full blur-[60px] opacity-20"></div>
-                            <h3 class="font-serif text-2xl text-white italic mb-2 relative z-10">The Golden Shadow</h3>
-                            <p class="text-sm text-stone-400 mb-6 relative z-10 max-w-lg">The Saboteur holds your fears. The Golden Shadow holds your unlived greatness. The traits you admire in others (The Hero) are merely your own latent potential waiting to be claimed.</p>
+                        <!-- THE SHADOW CONTRACT -->
+                        <div class="bg-stone-50 p-8 rounded-2xl border border-stone-200">
+                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-stone-500 mb-6">Breaking The Contract</h3>
+                            <p class="font-serif text-lg text-stone-700 mb-6">You have an unconscious contract that says: <em>"I will only be safe/loved/successful if I am [Exhausted/Perfect/Silent]."</em></p>
                             
-                            <label class="text-xs font-bold uppercase tracking-widest text-gold-500 block mb-2 relative z-10">Who is your hero, and what trait do they have that you "lack"?</label>
-                            <textarea oninput="saveEntry('cycle6', 'golden_shadow', this.value)" class="w-full bg-stone-800/50 border-b border-stone-600 text-white font-serif text-lg italic p-2 focus:outline-none focus:border-gold-500 rounded relative z-10" placeholder="I admire [Name] because they are [Trait]. This trait lives in me as...">${appState.entries.cycle6.golden_shadow || ''}</textarea>
+                            <label class="text-xs font-bold uppercase text-red-500 block mb-2">The Old Contract (Void)</label>
+                            <input type="text" oninput="saveEntry('cycle6', 'shadow_contract', this.value)" value="${appState.entries.cycle6.shadow_contract || ''}" class="w-full bg-white border-b-2 border-red-200 p-3 font-serif text-xl italic text-stone-500 line-through decoration-red-500 mb-8" placeholder="e.g. I must suffer to matter...">
+
+                            <label class="text-xs font-bold uppercase text-green-600 block mb-2">The New Contract (Active)</label>
+                            <textarea oninput="saveEntry('cycle6', 'action', this.value)" class="w-full bg-white border-b-2 border-green-600 p-3 font-serif text-2xl text-stone-900 focus:outline-none h-24" placeholder="I am worthy because...">${appState.entries.cycle6.action}</textarea>
                         </div>
 
-                        <div class="bg-gold-50 border border-gold-200 p-8 rounded-xl relative overflow-hidden">
-                            <div class="absolute top-0 right-0 p-4 opacity-20 text-6xl">⚡</div>
-                            <label class="font-sans text-xs font-bold uppercase tracking-widest text-gold-800 block mb-4">The Contract</label>
-                            <div class="space-y-6">
-                                <div>
-                                    <span class="font-serif text-2xl text-stone-800">I solemnly commit to</span>
-                                    <input type="text" oninput="saveEntry('cycle6', 'action', this.value)" value="${appState.entries.cycle6.action}" class="bg-transparent border-b-2 border-stone-800 w-full font-serif text-2xl text-stone-900 focus:outline-none p-1" placeholder="take this action...">
-                                </div>
-                                <div>
-                                    <span class="font-serif text-2xl text-stone-800">by</span>
-                                    <input type="text" oninput="saveEntry('cycle6', 'commitment', this.value)" value="${appState.entries.cycle6.commitment}" class="bg-transparent border-b-2 border-stone-800 w-1/2 font-serif text-2xl text-stone-900 focus:outline-none p-1" placeholder="tomorrow at...">
-                                </div>
-                            </div>
+                        <!-- THE GOLDEN SHADOW -->
+                        <div class="bg-stone-900 text-stone-200 p-10 rounded-2xl border border-stone-800 relative overflow-hidden shadow-2xl">
+                            <div class="absolute -top-10 -right-10 w-60 h-60 bg-gold-500 rounded-full blur-[80px] opacity-10"></div>
+                            <h3 class="font-serif text-2xl text-white italic mb-2 relative z-10">The Golden Shadow</h3>
+                            <label class="text-xs font-bold uppercase tracking-widest text-gold-500 block mb-4 relative z-10">Who is your hero, and what trait do they have that you "lack"? (Hint: You have it.)</label>
+                            <textarea oninput="saveEntry('cycle6', 'golden_shadow', this.value)" class="w-full bg-stone-800/50 border-b border-stone-600 text-white font-serif text-xl italic p-4 focus:outline-none focus:border-gold-500 rounded relative z-10 placeholder:text-stone-600" placeholder="I admire [Name] for [Trait]...">${appState.entries.cycle6.golden_shadow || ''}</textarea>
                         </div>
                     </div>
                 `
@@ -500,34 +432,37 @@
                 id: 'cycle7',
                 title: "Cycle 07: Pattern Rec",
                 icon: "07",
-                audioText: "Cycle 7. Pattern Recognition. You have shifted your baseline. Save your blueprint.",
+                audioText: "Cycle 7. The Time Capsule.",
                 render: () => `
-                    <div class="space-y-8">
-                         <div class="flex justify-between items-end border-b border-stone-300 pb-4">
-                            <div>
-                                <h2 class="text-5xl font-serif italic text-stone-900">Pattern Rec</h2>
-                                <span class="text-xs font-bold uppercase tracking-widest text-gold-600 mb-2">Cycle 07</span>
+                    <div class="space-y-12 animate-fade-in">
+                         ${createAudioSection("Pattern Rec", "Cycle 7. The Time Capsule. You have shifted your baseline. Save your blueprint and return here often.")}
+                        
+                        <div class="bg-stone-900 text-stone-50 p-10 rounded-2xl shadow-2xl relative overflow-hidden">
+                             <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-gold-500 mb-8 relative z-10 border-b border-stone-800 pb-4">Your Data Stream</h3>
+                             <div class="grid md:grid-cols-2 gap-8 relative z-10 font-serif text-lg text-stone-400">
+                                <div><p class="text-xs uppercase tracking-widest text-stone-600 mb-1">Archetype</p><p class="text-white text-xl">${appState.entries.cycle1.archetype || "None Selected"}</p></div>
+                                
+                                <div><p class="text-xs uppercase tracking-widest text-stone-600 mb-1">Exit Stress (Result)</p><p class="text-white text-xl flex items-center gap-2"><input type="number" min="1" max="10" class="w-16 bg-transparent border-b border-gold-500 text-gold-500 text-center focus:outline-none" value="${appState.entries.cycle1.after}" oninput="updateCycle1(this.value, 'after')"> <span class="text-xs text-stone-500">(Adjust Now)</span></p></div>
+
+                                <div class="md:col-span-2"><p class="text-xs uppercase tracking-widest text-stone-600 mb-1">New Contract</p><p class="text-white text-xl italic">"${appState.entries.cycle6.action || "Pending..."}"</p></div>
                             </div>
-                            <button onclick="playSectionAudio()" class="p-3 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors"><i data-lucide="headphones" class="w-5 h-5 text-stone-700"></i></button>
-                        </div>
-                        <div class="bg-stone-900 text-stone-50 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
-                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-gold-500 mb-6 relative z-10">Your Data Stream</h3>
-                            <div class="space-y-4 font-serif text-lg text-stone-300 relative z-10">
-                                <p><strong>Starting Stress:</strong> <span class="text-white">${appState.entries.cycle1.before}</span></p>
-                                <p><strong>Archetype:</strong> <span class="text-white">${appState.entries.cycle1.archetype || "None"}</span></p>
-                                <p><strong>Golden Shadow:</strong> <span class="text-white">${appState.entries.cycle6.golden_shadow || "Pending"}</span></p>
-                                <p><strong>Commitment:</strong> <span class="text-white italic">"${appState.entries.cycle6.action || "..."}"</span></p>
-                            </div>
-                            <div class="mt-8 pt-8 border-t border-stone-800 relative z-10">
-                                <p class="text-xs uppercase tracking-widest text-stone-500 mb-2">Your New Identity</p>
-                                <textarea oninput="saveEntry('cycle7', 'identity', this.value)" class="w-full bg-transparent border-b border-stone-700 text-2xl font-serif italic text-white focus:outline-none h-20 resize-none" placeholder="I am the kind of person who...">${appState.entries.cycle7.identity}</textarea>
+                            
+                            <!-- CHART RENDERED HERE -->
+                            <div class="chart-container mt-8 relative z-10"><canvas id="c1Chart"></canvas></div>
+
+                            <div class="mt-12 pt-8 border-t border-stone-800 relative z-10">
+                                <p class="text-xs uppercase tracking-widest text-stone-500 mb-4">Your New Identity</p>
+                                <textarea oninput="saveEntry('cycle7', 'identity', this.value)" class="w-full bg-transparent border-b border-stone-700 text-3xl font-serif italic text-white focus:outline-none h-32 resize-none placeholder:text-stone-700" placeholder="I am the kind of person who...">${appState.entries.cycle7.identity}</textarea>
                             </div>
                         </div>
 
-                        <!-- PRINT ACTION -->
-                        <div class="flex justify-center pt-8">
+                        <!-- TIME CAPSULE EMAIL -->
+                        <div class="flex justify-center pt-8 gap-4 no-print">
+                            <a href="mailto:?subject=A Note from My Past Self (The Alchemist Protocol)&body=Here is my commitment from the Alchemist Protocol:%0D%0A%0D%0AMy New Identity: ${encodeURIComponent(appState.entries.cycle7.identity)}%0D%0A%0D%0AMy New Contract: ${encodeURIComponent(appState.entries.cycle6.action)}" class="px-8 py-4 bg-stone-900 text-white font-bold uppercase tracking-widest rounded-full hover:bg-gold-500 hover:text-stone-900 transition-all shadow-md flex items-center gap-2">
+                                <i data-lucide="mail" class="w-4 h-4"></i> Email to Future Self
+                            </a>
                             <button onclick="window.print()" class="px-8 py-4 bg-white border border-stone-300 text-stone-900 font-bold uppercase tracking-widest rounded-full hover:bg-stone-100 transition-all shadow-md flex items-center gap-2">
-                                <i data-lucide="printer" class="w-4 h-4"></i> Export Blueprint (PDF)
+                                <i data-lucide="printer" class="w-4 h-4"></i> Export PDF
                             </button>
                         </div>
                     </div>
@@ -542,22 +477,33 @@
             renderNav();
             renderContent();
             renderMobileNav();
-            updateProgress();
             
             document.getElementById('gate-pass').addEventListener('keypress', (e) => { 
                 if(e.key === 'Enter') unlockGate();
             });
         }
 
+        // --- PANIC MODE ---
+        function togglePanicMode() {
+            const overlay = document.getElementById('crisis-overlay');
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+            } else {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }
+        }
+
         // --- GATING ---
         function initGate() {
-            if (localStorage.getItem(PRODUCT_ID) === 'unlocked') {
+            if (localStorage.getItem('alchemist_guide_master') === 'unlocked') {
                 document.getElementById('access-gate').style.display = 'none';
             }
         }
         function unlockGate() {
-            if (document.getElementById('gate-pass').value === ACCESS_CODE) {
-                localStorage.setItem(PRODUCT_ID, 'unlocked');
+            if (document.getElementById('gate-pass').value === "GENESIS2026") {
+                localStorage.setItem('alchemist_guide_master', 'unlocked');
                 document.getElementById('access-gate').style.opacity = '0';
                 setTimeout(() => document.getElementById('access-gate').style.display = 'none', 700);
             } else {
@@ -566,7 +512,6 @@
         }
 
         // --- AUDIO ENGINE ---
-        var isPlaying = false;
         function playSectionAudio() {
             var step = contentMap[appState.currentStep];
             if (!step) return;
@@ -578,13 +523,7 @@
             bar.classList.remove('translate-y-[150%]');
             document.getElementById('player-title').innerText = step.title;
             
-            // Check if real URL exists, else use TTS
-            if(step.audioUrl) {
-                // Placeholder logic for real audio (can replace with actual Audio() object)
-                status.innerText = "Playing (Demo)";
-                wave.classList.remove('hidden');
-                icon.classList.add('hidden');
-            } else if (step.audioText) {
+            if(step.audioText) {
                 window.speechSynthesis.cancel();
                 var u = new SpeechSynthesisUtterance(step.audioText);
                 u.rate = 0.95; 
@@ -596,6 +535,12 @@
         function stopAudio() { 
             window.speechSynthesis.cancel(); 
             document.getElementById('audio-player-bar').classList.add('translate-y-[150%]'); 
+        }
+        
+        function toggleTranscript(btn) {
+            var box = btn.parentElement.nextElementSibling;
+            box.classList.toggle('hidden');
+            btn.innerText = box.classList.contains('hidden') ? "Read Transcript" : "Hide Transcript";
         }
 
         // --- STATE & ARCHETYPE ---
@@ -611,9 +556,19 @@
         function setArchetype(name, btnElement) {
             appState.entries.cycle1.archetype = name;
             saveEntry('cycle1', 'archetype', name);
-            // Visual Update
-            document.querySelectorAll('.arch-btn').forEach(b => b.className = "arch-btn p-4 bg-white border border-stone-200 rounded-lg hover:border-gold-400 hover:shadow-md transition-all text-left");
-            btnElement.className = "arch-btn p-4 bg-gold-50 border border-gold-500 rounded-lg shadow-md transition-all text-left ring-1 ring-gold-500";
+            document.querySelectorAll('.arch-btn').forEach(b => b.className = "arch-btn p-6 bg-white border border-stone-200 rounded-xl hover:border-gold-400 hover:shadow-lg transition-all text-left");
+            btnElement.className = "arch-btn p-6 bg-gold-50 border border-gold-500 rounded-xl shadow-md transition-all text-left ring-1 ring-gold-500";
+            renderContent();
+        }
+        
+        function selectZone(el) {
+            const allZones = el.parentElement.querySelectorAll('circle, rect');
+            allZones.forEach(z => {
+                z.setAttribute('fill', 'transparent'); 
+                z.classList.remove('fill-gold-500');
+            });
+            el.setAttribute('fill', '#f59e0b');
+            el.classList.remove('hover:fill-gold-500/30');
         }
 
         // --- RENDERERS ---
@@ -643,6 +598,7 @@
                 container.style.opacity = '1';
                 lucide.createIcons();
                 if (appState.currentStep === 1) initChart();
+                if (appState.currentStep === 7) initChart();
             }, 300);
             
             document.getElementById('prev-btn').disabled = appState.currentStep === 0;
@@ -698,5 +654,3 @@
     </script>
 </body>
 </html>
-
-
