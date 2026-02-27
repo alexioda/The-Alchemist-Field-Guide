@@ -457,11 +457,11 @@
                         </div>
 
                         <!-- TIME CAPSULE EMAIL -->
-                        <div class="flex justify-center pt-8 gap-4 no-print">
-                            <a href="mailto:?subject=A Note from My Past Self (The Alchemist Protocol)&body=Here is my commitment from the Alchemist Protocol:%0D%0A%0D%0AMy New Identity: ${encodeURIComponent(appState.entries.cycle7.identity)}%0D%0A%0D%0AMy New Contract: ${encodeURIComponent(appState.entries.cycle6.action)}" class="px-8 py-4 bg-stone-900 text-white font-bold uppercase tracking-widest rounded-full hover:bg-gold-500 hover:text-stone-900 transition-all shadow-md flex items-center gap-2">
+                        <div class="flex flex-col sm:flex-row justify-center items-center pt-8 gap-4 no-print w-full">
+                            <a href="mailto:?subject=A Note from My Past Self (The Alchemist Protocol)&body=Here is my commitment from the Alchemist Protocol:%0D%0A%0D%0AMy New Identity: ${encodeURIComponent(appState.entries.cycle7.identity)}%0D%0A%0D%0AMy New Contract: ${encodeURIComponent(appState.entries.cycle6.action)}" class="w-full sm:w-auto justify-center px-8 py-4 bg-stone-900 text-white font-bold uppercase tracking-widest rounded-full hover:bg-gold-500 hover:text-stone-900 transition-all shadow-md flex items-center gap-2">
                                 <i data-lucide="mail" class="w-4 h-4"></i> Email to Future Self
                             </a>
-                            <button onclick="window.print()" class="px-8 py-4 bg-white border border-stone-300 text-stone-900 font-bold uppercase tracking-widest rounded-full hover:bg-stone-100 transition-all shadow-md flex items-center gap-2">
+                            <button onclick="window.print()" class="w-full sm:w-auto justify-center px-8 py-4 bg-white border border-stone-300 text-stone-900 font-bold uppercase tracking-widest rounded-full hover:bg-stone-100 transition-all shadow-md flex items-center gap-2">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Export PDF
                             </button>
                         </div>
