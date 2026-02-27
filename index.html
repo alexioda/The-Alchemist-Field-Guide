@@ -1,656 +1,234 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Alchemist's Field Guide | Master Edition</title>
+import React, { useState } from 'react';
+import { Lock, Shield, Smartphone, Activity, BookOpen, Brain, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('somatic');
+
+  // Array of accepted compliance, cohort, and demo passwords
+  const VALID_PASSCODES = ['KINETIC2026', 'GENESIS2026', 'DEMO', 'MASTER'];
+
+  const handleLogin = (e) => {
+    e.preventDefault();
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    // Clean the input by removing spaces and forcing uppercase, then check if it's in the valid list
+    const cleanInput = passwordInput.trim().toUpperCase();
+    
+    if (VALID_PASSCODES.includes(cleanInput)) {
+      setIsAuthenticated(true);
+      setError('');
+    } else {
+      setError('Decryption Key Invalid. Please check your Command Center PDF.');
+    }
+  };
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        serif: ['"Cormorant Garamond"', 'serif'],
-                        sans: ['"Inter"', 'sans-serif'],
-                    },
-                    colors: {
-                        stone: { 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 300: '#d6d3d1', 400: '#a8a29e', 500: '#78716c', 600: '#57534e', 700: '#44403c', 800: '#292524', 900: '#1c1917' },
-                        gold: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f' },
-                        danger: { 500: '#ef4444', 600: '#dc2626' }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-                    },
-                    keyframes: {
-                        fadeIn: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .journal-input { background-image: linear-gradient(transparent, transparent 31px, #e7e5e4 31px, #e7e5e4 32px, transparent 32px); background-size: 100% 32px; line-height: 32px; padding: 8px 0; }
-        .accordion-content { transition: max-height 0.3s ease-out, opacity 0.3s ease-out; max-height: 0; opacity: 0; overflow: hidden; }
-        .accordion-open { max-height: 800px; opacity: 1; }
-        
-        .breath-circle {
-            width: 200px; height: 200px;
-            background: #2C5F2D;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-family: 'Cormorant Garamond', serif; font-size: 1.5rem;
-            box-shadow: 0 0 40px rgba(44, 95, 45, 0.3);
-        }
-        .breathing .breath-circle { animation: breathCycle 8s infinite ease-in-out; }
-        @keyframes breathCycle {
-            0% { transform: scale(1); content: "Inhale"; opacity: 0.8; }
-            40% { transform: scale(1.3); opacity: 1; }
-            50% { transform: scale(1.35); }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-
-        @media print {
-            body { background-color: white; color: black; display: block; height: auto; overflow: visible; }
-            aside, #mobile-menu-btn, #footer-nav, #audio-player-bar, #access-gate, #panic-btn, .no-print { display: none !important; }
-            main { margin-left: 0; width: 100%; max-width: 100%; padding: 0; overflow: visible; }
-            .bg-stone-900 { background-color: white !important; color: black !important; border: 1px solid #ccc; }
-            .text-stone-50, .text-stone-300, .text-white { color: black !important; }
-            .journal-input { border: 1px solid #ddd; border-radius: 4px; padding: 10px; background-image: none; }
-            .print-break { page-break-before: always; }
-        }
-    </style>
-</head>
-<body class="bg-stone-50 text-stone-900 font-sans antialiased h-screen overflow-hidden flex flex-col md:flex-row">
-
-    <!-- PANIC BUTTON -->
-    <button id="panic-btn" onclick="togglePanicMode()" class="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[80] bg-danger-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform duration-300 group border-2 border-white/20">
-        <i data-lucide="life-buoy" class="w-6 h-6 animate-pulse"></i>
-        <span class="absolute right-full mr-4 bg-stone-900 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Crisis Mode</span>
-    </button>
-
-    <!-- CRISIS OVERLAY -->
-    <div id="crisis-overlay" class="fixed inset-0 bg-stone-950/95 z-[90] hidden flex-col items-center justify-center backdrop-blur-xl transition-opacity duration-500">
-        <div class="text-center">
-            <h2 class="text-white font-serif text-3xl mb-2">Hardware Reboot</h2>
-            <p class="text-stone-400 text-xs uppercase tracking-widest mb-10">Physiological Sigh Protocol</p>
-            <div class="breathing"><div class="breath-circle">Breathe</div></div>
-            <p class="text-white/50 mt-10 text-sm animate-pulse">Double Inhale (Nose) ... Long Exhale (Mouth)</p>
-            <button onclick="togglePanicMode()" class="mt-12 text-stone-500 hover:text-white border-b border-stone-700 pb-1 text-xs uppercase tracking-widest transition-colors">Exit Protocol</button>
-        </div>
-    </div>
-
-    <!-- ACCESS GATE -->
-    <div id="access-gate" class="fixed inset-0 z-[100] bg-stone-950 flex flex-col items-center justify-center text-center px-6 transition-opacity duration-700">
-        <div class="max-w-sm w-full">
-            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8 text-gold-400 border border-white/10">
-                <i data-lucide="lock" class="w-6 h-6"></i>
+  // ------------------------------------------------------------------------
+  // SECURE LOCK SCREEN (Shown before correct password)
+  // ------------------------------------------------------------------------
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-stone-900 flex flex-col items-center justify-center p-6 font-sans">
+        <div className="max-w-md w-full bg-stone-800/50 p-8 rounded-2xl border border-stone-700 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-32 bg-gold-500/5 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div className="relative z-10 text-center mb-8">
+            <div className="w-16 h-16 bg-stone-900 border border-stone-700 rounded-xl flex items-center justify-center mx-auto mb-6 text-gold-500 shadow-inner">
+              <Lock className="w-8 h-8" />
             </div>
-            <h1 class="font-serif text-4xl text-white italic mb-3">Restricted Access</h1>
-            <p class="text-xs text-white/40 uppercase tracking-[0.2em] mb-10">Enter Protocol Cipher</p>
-            <input type="password" id="gate-pass" placeholder="ENTER CIPHER" class="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-center text-white text-lg tracking-widest focus:outline-none focus:border-gold-500/50 transition-all mb-4 placeholder:text-white/10 font-serif uppercase">
-            <button onclick="unlockGate()" class="w-full py-4 bg-white text-stone-900 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gold-400 transition-all">Unlock Field Guide</button>
-            <p id="gate-error" class="text-red-400 text-xs mt-4 hidden uppercase tracking-widest animate-pulse">Incorrect Cipher</p>
-        </div>
-    </div>
+            <h1 className="text-3xl font-serif italic text-white mb-2">System Locked</h1>
+            <p className="text-stone-400 text-sm">Enter the Decryption Key from your Command Center PDF to access the architecture.</p>
+          </div>
 
-    <!-- Mobile Header -->
-    <div class="md:hidden bg-stone-900 text-stone-50 p-4 flex justify-between items-center z-50 shadow-md">
-        <div class="flex items-center gap-2">
-            <div class="w-6 h-6 bg-white text-stone-900 flex items-center justify-center font-serif italic text-sm">L</div>
-            <span class="font-serif text-lg italic">Alchemist Guide</span>
-        </div>
-        <button id="mobile-menu-btn" class="text-gold-400 text-2xl leading-none">☰</button>
-    </div>
-
-    <div id="mobile-menu" class="fixed inset-0 bg-stone-900/95 z-40 hidden flex-col justify-center items-center space-y-6 backdrop-blur-sm"></div>
-
-    <!-- Sidebar -->
-    <aside class="hidden md:flex flex-col w-80 bg-stone-900 text-stone-300 h-full border-r border-stone-800 p-8 overflow-y-auto no-scrollbar flex-shrink-0">
-        <div class="mb-12">
-            <div class="w-10 h-10 bg-white text-stone-900 flex items-center justify-center font-serif italic text-xl mb-6">L</div>
-            <h1 class="font-serif text-4xl text-stone-50 italic leading-none mb-2">The<br>Alchemist's<br>Guide</h1>
-            <div class="h-1 w-12 bg-gold-500 mb-4"></div>
-            <p class="text-[10px] uppercase tracking-[0.2em] text-stone-500">Master Edition</p>
-        </div>
-        <nav class="space-y-2 flex-1" id="desktop-nav"></nav>
-        <div class="mt-auto pt-8 border-t border-stone-800">
-            <a href="https://liveadaptiv.com" class="flex items-center gap-3 mb-4 group opacity-60 hover:opacity-100 transition-opacity">
-                <div class="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center text-stone-500 group-hover:text-white transition-colors"><i data-lucide="layout-grid" class="w-4 h-4"></i></div>
-                <div><p class="text-[10px] uppercase tracking-widest text-stone-400 group-hover:text-white transition-colors">Ecosystem</p><p class="text-[9px] text-stone-600">Return to Hub</p></div>
-            </a>
-            <div class="flex items-center gap-3 opacity-40"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-[10px] uppercase tracking-widest">Protocol Active</span></div>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 h-full overflow-y-auto relative bg-stone-50" id="main-content">
-        <div class="max-w-3xl mx-auto px-6 py-12 md:py-20 min-h-full flex flex-col pb-32">
-            
-            <div class="hidden print-only-header">
-                <h1 class="font-serif text-4xl italic mb-2">The Alchemist's Field Guide</h1>
-                <p class="text-xs uppercase tracking-widest">Personal Protocol</p>
-                <div class="h-px w-full bg-stone-200 my-8"></div>
-            </div>
-
-            <div id="content-container" class="flex-1 animate-fade-in"></div>
-
-            <div class="mt-20 flex justify-between items-center border-t border-stone-200 pt-8 pb-8" id="footer-nav">
-                <button id="prev-btn" class="text-stone-400 hover:text-stone-900 font-serif italic text-lg transition-colors flex items-center gap-2 disabled:opacity-0 cursor-pointer">&larr; Previous</button>
-                <div class="h-1 flex-1 mx-4 bg-stone-200 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-gold-500 w-0 transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div></div>
-                <button id="next-btn" class="bg-stone-900 text-stone-50 px-8 py-3 rounded-full hover:bg-gold-600 hover:text-stone-900 transition-all font-sans text-xs font-bold tracking-[0.2em] uppercase shadow-lg transform hover:-translate-y-0.5">Next &rarr;</button>
-            </div>
-        </div>
-    </main>
-
-    <!-- Audio Player -->
-    <div id="audio-player-bar" class="fixed bottom-0 md:bottom-6 md:left-auto md:right-6 md:w-96 w-full glass-panel md:rounded-2xl p-4 transform translate-y-[150%] transition-transform duration-500 z-[60] flex items-center justify-between border-t md:border border-gold-500/20 bg-stone-900/95 backdrop-blur-xl shadow-2xl">
-        <div class="flex items-center gap-4">
-            <div class="w-10 h-10 bg-gold-500/10 rounded-full flex items-center justify-center text-gold-400">
-                 <div class="loading-wave hidden" id="player-wave"><div></div><div></div><div></div><div></div></div>
-                 <i data-lucide="play" id="player-icon" class="w-4 h-4 fill-current"></i>
-            </div>
+          <form onSubmit={handleLogin} className="relative z-10 space-y-6">
             <div>
-                <p class="font-serif text-sm text-stone-200 italic" id="player-title">Guide</p>
-                <p class="text-[9px] text-stone-500 uppercase tracking-widest" id="player-status">Ready</p>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Enter Decryption Key"
+                className="w-full bg-stone-900 border border-stone-700 rounded-xl px-4 py-4 text-white placeholder-stone-500 focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-all text-center tracking-widest uppercase text-sm"
+              />
+              {error && <p className="text-red-400 text-xs text-center mt-3 uppercase tracking-wider font-bold">{error}</p>}
             </div>
+            <button
+              type="submit"
+              className="w-full py-4 bg-gold-500 hover:bg-gold-400 text-stone-900 font-bold rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]"
+            >
+              Initiate Protocol
+            </button>
+          </form>
         </div>
-        <button onclick="stopAudio()" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <p className="mt-8 text-[10px] text-stone-500 uppercase tracking-widest">© 2026 LiveAdaptiv</p>
+      </div>
+    );
+  }
+
+  // ------------------------------------------------------------------------
+  // MAIN APPLICATION PORTAL (Shown after correct password)
+  // ------------------------------------------------------------------------
+  return (
+    <div className="min-h-screen bg-stone-50 font-sans text-stone-900">
+      
+      {/* Top Navigation Bar */}
+      <nav className="w-full bg-white border-b border-stone-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-stone-900 text-white flex items-center justify-center font-serif italic text-lg rounded-md">A</div>
+            <span className="font-serif text-xl tracking-wide font-semibold">The Alchemist</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-stone-400">
+            <Activity className="w-3 h-3 text-gold-500" />
+            <span>Secure Session</span>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-4xl mx-auto px-6 py-12">
+        
+        {/* Header Section */}
+        <header className="mb-12 text-center md:text-left">
+          <span className="inline-block py-1 px-3 border border-stone-300 rounded-full text-[10px] uppercase tracking-[0.2em] text-stone-500 mb-4 bg-white">
+            Deep Work Architecture
+          </span>
+          <h1 className="text-4xl md:text-5xl font-serif italic text-stone-900 mb-4">The Alchemist Field Guide</h1>
+          <p className="text-stone-500 text-lg font-light max-w-2xl leading-relaxed">
+            Welcome to the inner architecture. Use these active frameworks to map somatic friction, rewrite internal narratives, and alchemize stress into high-leverage focus.
+          </p>
+        </header>
+
+        {/* Clinical Tabs */}
+        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-8 pb-2">
+          <button 
+            onClick={() => setActiveTab('somatic')}
+            className={`whitespace-nowrap px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'somatic' ? 'bg-stone-900 text-white shadow-md' : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-100'}`}
+          >
+            <Activity className="w-4 h-4" /> Somatic Map
+          </button>
+          <button 
+            onClick={() => setActiveTab('script')}
+            className={`whitespace-nowrap px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'script' ? 'bg-stone-900 text-white shadow-md' : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-100'}`}
+          >
+            <Brain className="w-4 h-4" /> Script Generator
+          </button>
+          <button 
+            onClick={() => setActiveTab('biology')}
+            className={`whitespace-nowrap px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'biology' ? 'bg-stone-900 text-white shadow-md' : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-100'}`}
+          >
+            <Zap className="w-4 h-4" /> Biology of Belief
+          </button>
+        </div>
+
+        {/* Tab Content Areas */}
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 md:p-10 min-h-[400px]">
+          
+          {activeTab === 'somatic' && (
+            <div className="animate-in fade-in duration-500">
+              <h2 className="text-3xl font-serif italic text-stone-900 mb-2">The Somatic Map</h2>
+              <p className="text-stone-500 text-sm mb-8">Locate the physical anchor of your current psychological friction.</p>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">1. Physical Sensation</label>
+                  <textarea 
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl p-4 text-stone-700 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 transition-all min-h-[100px]"
+                    placeholder="Where do you feel the stress in your body right now? (e.g., Tightness in chest, shallow breathing...)"
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">2. The Attached Narrative</label>
+                  <textarea 
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl p-4 text-stone-700 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 transition-all min-h-[100px]"
+                    placeholder="What is the story your ego is telling you about this sensation? (e.g., 'If I fail this presentation, my career is over...')"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'script' && (
+            <div className="animate-in fade-in duration-500">
+              <h2 className="text-3xl font-serif italic text-stone-900 mb-2">Boundary Script Generator</h2>
+              <p className="text-stone-500 text-sm mb-8">Construct clinical language to defend your energy without burning professional bridges.</p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-stone-50 p-6 rounded-xl border border-stone-200">
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-stone-900 mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-gold-500" /> The Delay Protocol
+                  </h4>
+                  <p className="text-sm text-stone-600 italic">"I have received your request. Let me review my current bandwidth against our primary objectives and I will provide a timeline by [Time/Day]."</p>
+                </div>
+                <div className="bg-stone-50 p-6 rounded-xl border border-stone-200">
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-stone-900 mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-gold-500" /> The Prioritization Protocol
+                  </h4>
+                  <p className="text-sm text-stone-600 italic">"I can absolutely take point on this. In order to execute this at the highest level, which of my current three deliverables should we pause?"</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'biology' && (
+            <div className="animate-in fade-in duration-500">
+              <h2 className="text-3xl font-serif italic text-stone-900 mb-2">The 90-Second Rule</h2>
+              <p className="text-stone-500 text-sm mb-8">Understanding the physics of your biological stress response.</p>
+              
+              <div className="prose prose-stone max-w-none text-stone-600 font-light leading-relaxed">
+                <p>When you are triggered, the chemical dump of adrenaline and cortisol takes exactly <strong>90 seconds</strong> to flush through your bloodstream. After 90 seconds, the physiological response is over.</p>
+                <p>If you remain stressed, angry, or panicked after 90 seconds, it is because your cognitive brain has chosen to replay the narrative, triggering a brand new chemical dump.</p>
+                <div className="bg-stone-900 text-white p-6 rounded-xl mt-6">
+                  <h4 className="font-serif italic text-xl mb-2 text-gold-400">The Intervention</h4>
+                  <p className="text-sm mb-0">Do not fight the 90 seconds. Observe it. Let the heat rise in your chest. When the 90 seconds is up, you must actively choose to interrupt the narrative. Step out of the room, wash your face with cold water, or use the Sovereign App.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* ------------------------------------------------------------------------
+            THE COMPLETE YOUR ECOSYSTEM SECTION (WITH RESPONSIVE FIX)
+            ------------------------------------------------------------------------ */}
+        <div className="mt-12 p-8 bg-stone-900 rounded-2xl border border-stone-800 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-32 bg-gold-500/5 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div className="relative z-10">
+            <h3 className="font-serif text-3xl italic text-white mb-2">Complete Your Ecosystem</h3>
+            <p className="text-stone-400 text-sm mb-8 max-w-xl">
+              This field guide is your deep-work map. For real-time, daily acute stress triage, keep the Sovereign App bookmarked on your phone. To upgrade your architecture, return to the Hub.
+            </p>
+            
+            {/* The Magic Fix: flex-col on mobile, sm:flex-row on desktop */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
+              <a 
+                href="https://www.liveadaptiv.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full flex-1 py-4 px-6 bg-gold-500 hover:bg-gold-400 text-stone-900 text-[10px] font-bold uppercase tracking-widest text-center rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                <Shield className="w-4 h-4" /> Return to Main Hub
+              </a>
+              <a 
+                href="https://app.liveadaptiv.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full flex-1 py-4 px-6 bg-stone-800 border border-stone-700 text-white hover:bg-stone-700 text-[10px] font-bold uppercase tracking-widest text-center rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                <Smartphone className="w-4 h-4 text-stone-400" /> Open Sovereign App
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <footer className="text-center pb-12 text-[10px] text-stone-400 uppercase tracking-widest font-bold">
+        LiveAdaptiv Clinical Architecture
+      </footer>
     </div>
+  );
+}
 
-    <script>
-        // --- MASTER GATING CONFIG ---
-        const ACCESS_KEYS = { 
-            "GENESIS2026": "2030-01-01",  // Master Code
-            "DEMO": "2030-01-01", 
-            "MASTER": "2099-12-31" 
-        };
-        
-        var PRODUCT_ID = "alchemist_guide_final"; 
 
-        var appState = {
-            currentStep: 0,
-            entries: {
-                cycle1: { before: 5, after: 8, archetype: "" },
-                cycle2: { sensation: "", message: "" },
-                cycle3: { thought: "", reframe: "", failure_resume: "" },
-                cycle4: { question: "", answer: "" },
-                cycle5: { stillness: "" },
-                cycle6: { action: "", commitment: "", golden_shadow: "", shadow_contract: "" },
-                cycle7: { identity: "" }
-            }
-        };
 
-        function getArchetypePrompt() {
-            const arc = appState.entries.cycle1.archetype;
-            if (arc === "The Rusher") return "As a Rusher, I tell myself there isn't enough time. The truth is...";
-            if (arc === "The Freezer") return "As a Freezer, I tell myself I can't handle this. The truth is...";
-            if (arc === "The Fixer") return "As a Fixer, I tell myself I must save everyone. The truth is...";
-            return "I keep thinking that...";
-        }
-
-        var createAudioSection = (title, audioText) => `
-            <div class="flex flex-col items-end border-b border-stone-200 pb-6 mb-10 no-print">
-                <div class="flex justify-between w-full items-end">
-                    <div>
-                        <h2 class="text-5xl md:text-6xl font-serif italic text-stone-900 leading-none">${title}</h2>
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-gold-600 mb-2 mt-2 block">Audio Briefing</span>
-                    </div>
-                    <button onclick="playSectionAudio()" class="p-4 bg-stone-100 rounded-full hover:bg-gold-400 transition-colors flex items-center justify-center gap-2 group shadow-sm">
-                        <i data-lucide="headphones" class="w-5 h-5 text-stone-700 group-hover:text-stone-900"></i>
-                        <span class="hidden md:inline text-[10px] font-bold uppercase tracking-widest text-stone-600 group-hover:text-stone-900">Listen</span>
-                    </button>
-                </div>
-                <div class="mt-3 w-full text-right">
-                    <button onclick="toggleTranscript(this)" class="text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-900 transition-colors border-b border-stone-200 hover:border-stone-900 pb-0.5">Read Transcript</button>
-                </div>
-                <div class="transcript-box hidden w-full text-left mt-6 p-6 bg-stone-50 rounded-xl border-l-2 border-gold-400 text-stone-600 font-serif italic text-lg leading-relaxed">
-                    "${audioText}"
-                </div>
-            </div>
-        `;
-
-        var createConceptBox = (tag, title, text) => `
-            <div class="bg-stone-50 p-8 rounded-xl border-l-4 border-stone-900 mb-12">
-                <div class="flex items-center gap-3 mb-4">
-                    <span class="px-2 py-1 bg-stone-200 text-stone-600 text-[10px] font-bold uppercase tracking-widest rounded">${tag}</span>
-                    <h3 class="font-serif text-2xl italic text-stone-900">${title}</h3>
-                </div>
-                <p class="text-stone-600 leading-relaxed font-serif text-lg">${text}</p>
-            </div>
-        `;
-
-        var contentMap = [
-            {
-                id: 'intro',
-                title: "Protocol Overview",
-                icon: "◉",
-                audioText: "Welcome to the Master Edition. This is your Operating System. We are here to rewrite the code of your stress response. Let's begin.",
-                render: () => `
-                    <div class="text-center space-y-8 animate-fade-in">
-                        <span class="inline-block py-1 px-3 border border-stone-300 rounded-full text-[10px] uppercase tracking-[0.2em] text-stone-500">Master Edition</span>
-                        <h2 class="text-5xl md:text-7xl font-serif italic text-stone-900 leading-none">The Seven<br>Cycles.</h2>
-                        <div class="w-16 h-1 bg-gold-400 mx-auto"></div>
-                        <div class="flex flex-col items-center gap-2 mt-8 no-print">
-                            <button onclick="playSectionAudio()" class="flex items-center gap-3 px-8 py-3 bg-stone-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gold-500 hover:text-stone-900 transition-all shadow-lg hover:-translate-y-1">
-                                <i data-lucide="play" class="w-4 h-4"></i> Listen to Overview
-                            </button>
-                        </div>
-                        <p class="text-xl text-stone-500 font-serif leading-relaxed max-w-xl mx-auto mt-12 font-light">
-                            You are not here to "fix" yourself. You are here to learn the mechanics of your own energy.
-                        </p>
-                        <div class="bg-red-50 border border-red-100 p-4 rounded-lg inline-block mx-auto mt-8">
-                            <p class="text-xs text-red-800 font-bold uppercase tracking-widest flex items-center gap-2 justify-center"><i data-lucide="life-buoy" class="w-4 h-4"></i> Pro Tip</p>
-                            <p class="text-sm text-red-600 mt-1">If you are in crisis, use the Panic Button (Bottom Right).</p>
-                        </div>
-                    </div>
-                `
-            },
-            {
-                id: 'cycle1',
-                title: "Cycle 01: Initiation",
-                icon: "01",
-                audioText: "Cycle 1. The Anchor. Establish your baseline. We cannot change what we do not measure.",
-                render: () => `
-                    <div class="space-y-12 animate-fade-in">
-                        ${createAudioSection("The Anchor", "Cycle 1. The Anchor. Establish your baseline. We cannot change what we do not measure. By naming the stress pattern, you separate your identity from the reaction.")}
-                        
-                        ${createConceptBox("The Logic", "Pattern Recognition", "In complex systems theory, you cannot stabilize a system until you identify the oscillation. Humans are systems. Your stress isn't random; it follows an Archetype. Identifying the Archetype reduces the 'Allostatic Load' on your brain immediately.")}
-
-                        <div class="bg-stone-50 p-8 rounded-2xl border border-stone-200">
-                            <p class="text-xs font-bold uppercase tracking-widest text-stone-400 mb-6">Select Your Archetype (Dynamic Intelligence)</p>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <button onclick="setArchetype('The Rusher', this)" class="arch-btn p-6 bg-white border border-stone-200 rounded-xl hover:border-gold-400 hover:shadow-lg transition-all text-left ${appState.entries.cycle1.archetype === 'The Rusher' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}"><span class="block font-serif text-xl italic text-stone-900 mb-2">The Rusher</span><span class="text-xs text-stone-500">"I don't have time." Anxiety.</span></button>
-                                <button onclick="setArchetype('The Freezer', this)" class="arch-btn p-6 bg-white border border-stone-200 rounded-xl hover:border-gold-400 hover:shadow-lg transition-all text-left ${appState.entries.cycle1.archetype === 'The Freezer' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}"><span class="block font-serif text-xl italic text-stone-900 mb-2">The Freezer</span><span class="text-xs text-stone-500">"I'm overwhelmed." Paralysis.</span></button>
-                                <button onclick="setArchetype('The Fixer', this)" class="arch-btn p-6 bg-white border border-stone-200 rounded-xl hover:border-gold-400 hover:shadow-lg transition-all text-left ${appState.entries.cycle1.archetype === 'The Fixer' ? 'border-gold-500 bg-gold-50 ring-1 ring-gold-500' : ''}"><span class="block font-serif text-xl italic text-stone-900 mb-2">The Fixer</span><span class="text-xs text-stone-500">"I have to save everyone."</span></button>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-8 rounded-2xl shadow-lg border border-stone-100">
-                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest mb-8 text-stone-400">Baseline Audit</h3>
-                            <div class="mb-8">
-                                <label class="block text-xs uppercase tracking-widest text-stone-500 mb-4">Current Stress Load (Subjective Units of Distress)</label>
-                                <input type="range" min="1" max="10" value="${appState.entries.cycle1.before}" oninput="updateCycle1(this.value, 'before')" class="w-full accent-stone-900 cursor-pointer">
-                                <div class="flex justify-between mt-2">
-                                    <span class="text-xs text-stone-400">1 (Zen)</span>
-                                    <span class="text-4xl font-serif italic text-stone-900" id="val-before">${appState.entries.cycle1.before}</span>
-                                    <span class="text-xs text-stone-400">10 (Panic)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`
-            },
-            {
-                id: 'cycle2',
-                title: "Cycle 02: Somatic Map",
-                icon: "02",
-                audioText: "Cycle 2. The Somatic Map.",
-                render: () => `
-                    <div class="space-y-12 animate-fade-in">
-                        ${createAudioSection("The Body", "Cycle 2. The Somatic Map. Emotions are biological events. When you connect with the body, do not rush.")}
-                        
-                        ${createConceptBox("The Science", "Interoception", "This is your brain's ability to sense the internal state of the body. Research shows that high Interoceptive Awareness correlates with emotional regulation. By locating the sensation, you shift brain activity from the Amygdala (Fear) to the Insula (Observation).")}
-                        
-                        <div class="bg-stone-50 border border-stone-200 p-8 rounded-xl text-center">
-                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-stone-500 mb-6">Step 1: The Scan</h3>
-                            <p class="font-serif text-xl italic text-stone-800 mb-8">"Close your eyes. Scan your body from head to toe. Where is the friction living right now?"</p>
-                            
-                            <div class="flex justify-center">
-                                <svg width="150" height="300" viewBox="0 0 100 200" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
-                                    <path d="M50 10 C 60 10, 65 15, 65 25 C 65 30, 60 35, 50 35 C 40 35, 35 30, 35 25 C 35 15, 40 10, 50 10 M50 35 L 50 80 M50 80 L 20 120 M50 80 L 80 120 M20 45 L 80 45" stroke="#a8a29e" fill="none" stroke-width="1.5" />
-                                    <circle cx="50" cy="25" r="15" fill="transparent" class="cursor-pointer hover:fill-gold-500/30 transition-colors" onclick="selectZone(this)" />
-                                    <rect x="35" y="40" width="30" height="25" fill="transparent" class="cursor-pointer hover:fill-gold-500/30 transition-colors" onclick="selectZone(this)" />
-                                    <rect x="35" y="65" width="30" height="15" fill="transparent" class="cursor-pointer hover:fill-gold-500/30 transition-colors" onclick="selectZone(this)" />
-                                </svg>
-                            </div>
-                            <p class="text-xs text-stone-400 mt-4 uppercase tracking-widest">Click the area to lock signal</p>
-                        </div>
-
-                        <div class="grid md:grid-cols-2 gap-12">
-                            <div class="space-y-8">
-                                <div><label class="font-serif text-2xl text-stone-900 italic block mb-4">Step 2: Describe the texture (color, temp, weight).</label><textarea oninput="saveEntry('cycle2', 'sensation', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-600 font-serif text-xl" placeholder="It feels heavy, like a gray stone...">${appState.entries.cycle2.sensation}</textarea></div>
-                                <div><label class="font-serif text-2xl text-stone-900 italic block mb-4">Step 3: If this part had a voice, what is its warning?</label><textarea oninput="saveEntry('cycle2', 'message', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-600 font-serif text-xl" placeholder="It is saying: 'You are not safe yet'">${appState.entries.cycle2.message}</textarea></div>
-                            </div>
-                            <div class="bg-white border border-stone-200 p-8 rounded-2xl shadow-sm h-fit"><h4 class="font-bold text-xs uppercase tracking-widest text-stone-400 mb-6">Somatic Decoder</h4><ul class="space-y-4 text-sm text-stone-600 font-serif text-lg"><li class="flex gap-4 items-baseline border-b border-stone-100 pb-3"><span class="text-gold-600 font-bold uppercase text-xs tracking-widest w-20">Chest</span> <span>Grief, Protection.</span></li><li class="flex gap-4 items-baseline border-b border-stone-100 pb-3"><span class="text-gold-600 font-bold uppercase text-xs tracking-widest w-20">Throat</span> <span>Unspoken truth.</span></li><li class="flex gap-4 items-baseline"><span class="text-gold-600 font-bold uppercase text-xs tracking-widest w-20">Gut</span> <span>Fear, Intuition.</span></li></ul></div>
-                        </div>
-                    </div>`
-            },
-            {
-                id: 'cycle3',
-                title: "Cycle 03: The Filter",
-                icon: "03",
-                audioText: "Cycle 3. The Filter. We are hunting for loops.",
-                render: () => `
-                    <div class="space-y-12 animate-fade-in">
-                         ${createAudioSection("The Mind", "Cycle 3. The Filter. We are hunting for loops. Catch the loop, and write down the absolute fact.")}
-
-                        ${createConceptBox("The Psychology", "Cognitive Defusion", "Your thoughts are not facts; they are secretions of the brain. When you write a thought down, you externalize it. You detach. This is called Cognitive Defusion. It turns 'I am failing' into 'I am having the thought that I am failing.'")}
-
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <div class="p-8 border border-stone-200 rounded-2xl bg-stone-50">
-                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-400 block mb-4">The Loop (Assumption)</label>
-                                <p class="text-[10px] text-gold-600 mb-4 font-bold uppercase tracking-widest border border-gold-200 inline-block px-2 py-1 rounded">Archetype: ${appState.entries.cycle1.archetype || "General"}</p>
-                                <textarea oninput="saveEntry('cycle3', 'thought', this.value)" class="w-full bg-transparent border-b border-stone-200 focus:border-stone-900 outline-none h-40 resize-none text-stone-600 font-serif text-xl italic leading-relaxed" placeholder="${getArchetypePrompt()}">${appState.entries.cycle3.thought}</textarea>
-                            </div>
-                            <div class="p-8 bg-stone-900 rounded-2xl text-stone-300 shadow-xl">
-                                <label class="font-sans text-xs font-bold uppercase tracking-widest text-gold-500 block mb-4">The Fact (Data)</label>
-                                <textarea oninput="saveEntry('cycle3', 'reframe', this.value)" class="w-full bg-transparent border-b border-stone-700 focus:border-gold-500 outline-none h-40 resize-none text-white font-serif text-xl leading-relaxed" placeholder="The absolute truth is...">${appState.entries.cycle3.reframe}</textarea>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-12 bg-red-50 p-8 rounded-2xl border border-red-100">
-                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-red-500 mb-6">The Failure Resume (Alchemy)</h3>
-                            <p class="text-stone-600 font-serif text-lg mb-6">List one major failure. Now, write the "Asset" it gave you (Resilience, Knowledge, Humility).</p>
-                            <textarea oninput="saveEntry('cycle3', 'failure_resume', this.value)" class="w-full bg-transparent border-b border-red-200 focus:border-red-500 outline-none h-24 resize-none text-stone-800 font-serif text-xl" placeholder="Failure: ... | Asset Gained: ...">${appState.entries.cycle3.failure_resume || ''}</textarea>
-                        </div>
-                    </div>`
-            },
-            {
-                id: 'cycle4',
-                title: "Cycle 04: Energy Leadership",
-                icon: "04",
-                audioText: "Cycle 4. Energy Leadership. Batman vs Yoda.",
-                render: () => `
-                    <div class="space-y-12 animate-fade-in">
-                         ${createAudioSection("The Energy", "Cycle 4. Energy Leadership. Think of it this way: Batman is Level 2 Energy (Force/Anger). Yoda is Level 5 Energy (Opportunity/Calm). Both are powerful, but only one is sustainable.")}
-                        
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="p-8 bg-stone-100 rounded-2xl border-l-4 border-stone-500">
-                                <h4 class="font-bold text-xl mb-2 text-stone-800">The Force (Level 2)</h4>
-                                <p class="text-sm text-stone-500 mb-4">Like Batman. Driven by conflict, justice, and anger. Gets results but leaves you exhausted.</p>
-                            </div>
-                            <div class="p-8 bg-gold-50 rounded-2xl border-l-4 border-gold-500">
-                                <h4 class="font-bold text-xl mb-2 text-stone-800">The Flow (Level 5)</h4>
-                                <p class="text-sm text-stone-500 mb-4">Like Yoda. Driven by purpose, opportunity, and peace. Gets better results with zero burnout.</p>
-                            </div>
-                        </div>
-
-                        <div class="space-y-8 mt-8">
-                            <div><label class="font-serif text-2xl text-stone-900 italic block mb-4">Where are you operating?</label><textarea oninput="saveEntry('cycle4', 'answer', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[100px] journal-input resize-none text-stone-600 font-serif text-xl">${appState.entries.cycle4.answer}</textarea></div>
-                        </div>
-                    </div>`
-            },
-            {
-                id: 'cycle5',
-                title: "Cycle 05: The Void",
-                icon: "05",
-                audioText: "Cycle 5. The Void.",
-                render: () => `
-                <div class="space-y-12 animate-fade-in">
-                    ${createAudioSection("The Void", "Cycle 5. The Void. Wait for the ripple.")}
-                    
-                    ${createConceptBox("The Science", "Default Mode Network", "When you stop 'doing', your brain switches to the Default Mode Network (DMN). This is where creativity and insight happen. But we are addicted to the Task Positive Network (Doing). Silence feels uncomfortable because it is a dopamine withdrawal. Stay in the withdrawal until the insight comes.")}
-
-                    <div class="flex justify-center py-12"><div class="w-40 h-40 rounded-full border border-stone-200 flex items-center justify-center animate-pulse"><div class="w-32 h-32 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center shadow-inner"><span class="font-serif italic text-2xl text-stone-400">Stillness</span></div></div></div>
-                    <div><label class="font-serif text-2xl text-stone-900 italic block mb-4">In the silence, what became clear?</label><textarea oninput="saveEntry('cycle5', 'stillness', this.value)" class="w-full bg-transparent border-b border-stone-300 focus:border-stone-900 focus:outline-none min-h-[120px] journal-input resize-none text-stone-600 font-serif text-xl">${appState.entries.cycle5.stillness}</textarea></div>
-                </div>`
-            },
-            {
-                id: 'cycle6',
-                title: "Cycle 06: Output & Shadow",
-                icon: "06",
-                audioText: "Cycle 6. Shadow Work.",
-                render: () => `
-                    <div class="space-y-16 animate-fade-in">
-                         ${createAudioSection("The Shadow", "Cycle 6. The Shadow. We must break the unconscious contract.")}
-                        
-                         ${createConceptBox("The Psychology", "Jungian Shadow", "Carl Jung taught that the 'Shadow' is not just evil; it is everything we have repressed. This includes your 'Golden Shadow'—your power, your genius, your voice. You projected it onto others because you were told it was 'too much'. It is time to take it back.")}
-
-                        <!-- THE SHADOW CONTRACT -->
-                        <div class="bg-stone-50 p-8 rounded-2xl border border-stone-200">
-                            <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-stone-500 mb-6">Breaking The Contract</h3>
-                            <p class="font-serif text-lg text-stone-700 mb-6">You have an unconscious contract that says: <em>"I will only be safe/loved/successful if I am [Exhausted/Perfect/Silent]."</em></p>
-                            
-                            <label class="text-xs font-bold uppercase text-red-500 block mb-2">The Old Contract (Void)</label>
-                            <input type="text" oninput="saveEntry('cycle6', 'shadow_contract', this.value)" value="${appState.entries.cycle6.shadow_contract || ''}" class="w-full bg-white border-b-2 border-red-200 p-3 font-serif text-xl italic text-stone-500 line-through decoration-red-500 mb-8" placeholder="e.g. I must suffer to matter...">
-
-                            <label class="text-xs font-bold uppercase text-green-600 block mb-2">The New Contract (Active)</label>
-                            <textarea oninput="saveEntry('cycle6', 'action', this.value)" class="w-full bg-white border-b-2 border-green-600 p-3 font-serif text-2xl text-stone-900 focus:outline-none h-24" placeholder="I am worthy because...">${appState.entries.cycle6.action}</textarea>
-                        </div>
-
-                        <!-- THE GOLDEN SHADOW -->
-                        <div class="bg-stone-900 text-stone-200 p-10 rounded-2xl border border-stone-800 relative overflow-hidden shadow-2xl">
-                            <div class="absolute -top-10 -right-10 w-60 h-60 bg-gold-500 rounded-full blur-[80px] opacity-10"></div>
-                            <h3 class="font-serif text-2xl text-white italic mb-2 relative z-10">The Golden Shadow</h3>
-                            <label class="text-xs font-bold uppercase tracking-widest text-gold-500 block mb-4 relative z-10">Who is your hero, and what trait do they have that you "lack"? (Hint: You have it.)</label>
-                            <textarea oninput="saveEntry('cycle6', 'golden_shadow', this.value)" class="w-full bg-stone-800/50 border-b border-stone-600 text-white font-serif text-xl italic p-4 focus:outline-none focus:border-gold-500 rounded relative z-10 placeholder:text-stone-600" placeholder="I admire [Name] for [Trait]...">${appState.entries.cycle6.golden_shadow || ''}</textarea>
-                        </div>
-                    </div>
-                `
-            },
-           {
-                id: 'cycle7',
-                title: "Cycle 07: The Blueprint",
-                icon: "07",
-                audioText: "Cycle 7. The Blueprint. Look at your data. Look at your new identity. You have shifted your baseline. Save this architecture and return here often.",
-                render: () => `
-                    <div class="space-y-12 animate-fade-in">
-                         ${createAudioSection("The Blueprint", "Cycle 7. The Blueprint. Look at your data. Look at your new identity. You have shifted your baseline. Save this architecture and return here often.")}
-                        
-                        <div class="bg-stone-900 text-stone-50 p-10 rounded-2xl shadow-2xl relative overflow-hidden">
-                             <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-gold-500 mb-8 relative z-10 border-b border-stone-800 pb-4">Your Architecture</h3>
-                             <div class="grid md:grid-cols-2 gap-8 relative z-10 font-serif text-lg text-stone-400">
-                                <div><p class="text-xs uppercase tracking-widest text-stone-600 mb-1">Archetype</p><p class="text-white text-xl">${appState.entries.cycle1.archetype || "None Selected"}</p></div>
-                                
-                                <div><p class="text-xs uppercase tracking-widest text-stone-600 mb-1">Exit Stress (Result)</p><p class="text-white text-xl flex items-center gap-2"><input type="number" min="1" max="10" class="w-16 bg-transparent border-b border-gold-500 text-gold-500 text-center focus:outline-none" value="${appState.entries.cycle1.after}" oninput="updateCycle1(this.value, 'after')"> <span class="text-xs text-stone-500">(Adjust Now)</span></p></div>
-
-                                <div class="md:col-span-2"><p class="text-xs uppercase tracking-widest text-stone-600 mb-1">New Contract</p><p class="text-white text-xl italic">"${appState.entries.cycle6.action || "Pending..."}"</p></div>
-                            </div>
-                            
-                            <!-- CHART RENDERED HERE -->
-                            <div class="chart-container mt-8 relative z-10"><canvas id="c1Chart"></canvas></div>
-
-                            <div class="mt-12 pt-8 border-t border-stone-800 relative z-10">
-                                <p class="text-xs uppercase tracking-widest text-stone-500 mb-4">Your New Identity</p>
-                                <textarea oninput="saveEntry('cycle7', 'identity', this.value)" class="w-full bg-transparent border-b border-stone-700 text-3xl font-serif italic text-white focus:outline-none h-32 resize-none placeholder:text-stone-700" placeholder="I am the kind of person who...">${appState.entries.cycle7.identity}</textarea>
-                            </div>
-                        </div>
-
-                        <!-- TIME CAPSULE EMAIL -->
-                        <div class="flex justify-center pt-8 gap-4 no-print">
-                            <a href="mailto:?subject=A Note from My Past Self (The Alchemist Protocol)&body=Here is my commitment from the Alchemist Protocol:%0D%0A%0D%0AMy New Identity: ${encodeURIComponent(appState.entries.cycle7.identity)}%0D%0A%0D%0AMy New Contract: ${encodeURIComponent(appState.entries.cycle6.action)}" class="px-8 py-4 bg-stone-900 text-white font-bold uppercase tracking-widest rounded-full hover:bg-gold-500 hover:text-stone-900 transition-all shadow-md flex items-center gap-2">
-                                <i data-lucide="mail" class="w-4 h-4"></i> Email to Future Self
-                            </a>
-                            <button onclick="window.print()" class="px-8 py-4 bg-white border border-stone-300 text-stone-900 font-bold uppercase tracking-widest rounded-full hover:bg-stone-100 transition-all shadow-md flex items-center gap-2">
-                                <i data-lucide="printer" class="w-4 h-4"></i> Export PDF
-                            </button>
-                        </div>
-                    </div>
-                `
-            }
-        ];
-
-        // --- CORE LOGIC ---
-        function init() {
-            initGate();
-            loadData();
-            renderNav();
-            renderContent();
-            renderMobileNav();
-            
-            document.getElementById('gate-pass').addEventListener('keypress', (e) => { 
-                if(e.key === 'Enter') unlockGate();
-            });
-        }
-
-        // --- PANIC MODE ---
-        function togglePanicMode() {
-            const overlay = document.getElementById('crisis-overlay');
-            if (overlay.classList.contains('hidden')) {
-                overlay.classList.remove('hidden');
-                overlay.classList.add('flex');
-            } else {
-                overlay.classList.add('hidden');
-                overlay.classList.remove('flex');
-            }
-        }
-
-        // --- GATING ---
-        function initGate() {
-            if (localStorage.getItem('alchemist_guide_master') === 'unlocked') {
-                document.getElementById('access-gate').style.display = 'none';
-            }
-        }
-        function unlockGate() {
-            if (document.getElementById('gate-pass').value === "GENESIS2026") {
-                localStorage.setItem('alchemist_guide_master', 'unlocked');
-                document.getElementById('access-gate').style.opacity = '0';
-                setTimeout(() => document.getElementById('access-gate').style.display = 'none', 700);
-            } else {
-                document.getElementById('gate-error').classList.remove('hidden');
-            }
-        }
-
-        // --- AUDIO ENGINE ---
-        function playSectionAudio() {
-            var step = contentMap[appState.currentStep];
-            if (!step) return;
-            var bar = document.getElementById('audio-player-bar');
-            var status = document.getElementById('player-status');
-            var wave = document.getElementById('player-wave');
-            var icon = document.getElementById('player-icon');
-            
-            bar.classList.remove('translate-y-[150%]');
-            document.getElementById('player-title').innerText = step.title;
-            
-            if(step.audioText) {
-                window.speechSynthesis.cancel();
-                var u = new SpeechSynthesisUtterance(step.audioText);
-                u.rate = 0.95; 
-                u.onstart = () => { status.innerText = "Guide Speaking..."; wave.classList.remove('hidden'); icon.classList.add('hidden'); };
-                u.onend = () => { status.innerText = "Complete"; wave.classList.add('hidden'); icon.classList.remove('hidden'); };
-                window.speechSynthesis.speak(u);
-            }
-        }
-        function stopAudio() { 
-            window.speechSynthesis.cancel(); 
-            document.getElementById('audio-player-bar').classList.add('translate-y-[150%]'); 
-        }
-        
-        function toggleTranscript(btn) {
-            var box = btn.parentElement.nextElementSibling;
-            box.classList.toggle('hidden');
-            btn.innerText = box.classList.contains('hidden') ? "Read Transcript" : "Hide Transcript";
-        }
-
-        // --- STATE & ARCHETYPE ---
-        function loadData() {
-            var saved = localStorage.getItem('adaptiv_journal_v2');
-            if (saved) { try { appState.entries = { ...appState.entries, ...JSON.parse(saved) }; } catch(e) {} }
-        }
-        function saveEntry(cycle, key, value) {
-            appState.entries[cycle][key] = value;
-            localStorage.setItem('adaptiv_journal_v2', JSON.stringify(appState.entries));
-            if (cycle === 'cycle1' && document.getElementById('c1Chart')) updateChart();
-        }
-        function setArchetype(name, btnElement) {
-            appState.entries.cycle1.archetype = name;
-            saveEntry('cycle1', 'archetype', name);
-            document.querySelectorAll('.arch-btn').forEach(b => b.className = "arch-btn p-6 bg-white border border-stone-200 rounded-xl hover:border-gold-400 hover:shadow-lg transition-all text-left");
-            btnElement.className = "arch-btn p-6 bg-gold-50 border border-gold-500 rounded-xl shadow-md transition-all text-left ring-1 ring-gold-500";
-            renderContent();
-        }
-        
-        function selectZone(el) {
-            const allZones = el.parentElement.querySelectorAll('circle, rect');
-            allZones.forEach(z => {
-                z.setAttribute('fill', 'transparent'); 
-                z.classList.remove('fill-gold-500');
-            });
-            el.setAttribute('fill', '#f59e0b');
-            el.classList.remove('hover:fill-gold-500/30');
-        }
-
-        // --- RENDERERS ---
-        function renderNav() {
-            document.getElementById('desktop-nav').innerHTML = contentMap.map((item, i) => `
-                <button onclick="goToStep(${i})" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-4 transition-all ${i === appState.currentStep ? 'bg-stone-800 text-white border-r-4 border-gold-500' : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800/30'}">
-                    <span class="font-mono text-xs opacity-50">${item.icon}</span>
-                    <span class="font-serif text-lg italic">${item.title.split(':')[1] || item.title}</span>
-                </button>
-            `).join('');
-        }
-        
-        function renderMobileNav() {
-             var m = document.getElementById('mobile-menu');
-             m.innerHTML = contentMap.map((item, i) => `
-                <button onclick="goToStep(${i}); toggleMobileMenu()" class="text-xl font-serif italic ${i === appState.currentStep ? 'text-gold-400' : 'text-stone-300'}">
-                    ${item.title}
-                </button>
-            `).join('');
-        }
-
-        function renderContent() {
-            var container = document.getElementById('content-container');
-            container.style.opacity = '0';
-            setTimeout(() => {
-                container.innerHTML = contentMap[appState.currentStep].render();
-                container.style.opacity = '1';
-                lucide.createIcons();
-                if (appState.currentStep === 1) initChart();
-                if (appState.currentStep === 7) initChart();
-            }, 300);
-            
-            document.getElementById('prev-btn').disabled = appState.currentStep === 0;
-            document.getElementById('prev-btn').style.opacity = appState.currentStep === 0 ? '0' : '1';
-            document.getElementById('next-btn').innerHTML = appState.currentStep === contentMap.length - 1 ? "Finish" : "Next &rarr;";
-        }
-        function goToStep(i) {
-            if (i >= 0 && i < contentMap.length) {
-                appState.currentStep = i;
-                renderNav(); 
-                renderContent(); 
-                renderMobileNav(); 
-                updateProgress();
-            }
-        }
-        function updateProgress() {
-            var pct = ((appState.currentStep + 1) / contentMap.length) * 100;
-            document.getElementById('progress-bar').style.width = `${pct}%`;
-        }
-        function toggleMobileMenu() {
-            var m = document.getElementById('mobile-menu');
-            m.classList.toggle('hidden'); 
-            m.classList.toggle('flex');
-        }
-        function toggleAccordion(btn) {
-            var content = btn.nextElementSibling;
-            var icon = btn.querySelector('span:last-child');
-            if (content.style.maxHeight) { content.style.maxHeight = null; content.style.opacity = '0'; icon.style.transform = 'rotate(0deg)'; } 
-            else { content.style.maxHeight = content.scrollHeight + "px"; content.style.opacity = '1'; icon.style.transform = 'rotate(180deg)'; }
-        }
-
-        // --- CHART ---
-        var chartInstance = null;
-        function initChart() {
-            var ctx = document.getElementById('c1Chart'); if(!ctx) return;
-            chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: ['Entry', 'Exit'], datasets: [{ label: 'Stress Load', data: [appState.entries.cycle1.before, appState.entries.cycle1.after], backgroundColor: ['#44403c', '#f59e0b'], borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 10, display: false }, x: { grid: {display:false} } }, plugins: { legend: {display:false} } }
-            });
-        }
-        function updateCycle1(val, type) {
-            document.getElementById(`val-${type}`).innerText = val;
-            saveEntry('cycle1', type, val);
-            if(chartInstance) { chartInstance.data.datasets[0].data = [appState.entries.cycle1.before, appState.entries.cycle1.after]; chartInstance.update(); }
-        }
-
-        document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
-        document.getElementById('prev-btn').addEventListener('click', () => goToStep(appState.currentStep - 1));
-        document.getElementById('next-btn').addEventListener('click', () => goToStep(appState.currentStep + 1));
-
-        init();
-    </script>
-</body>
-</html>
