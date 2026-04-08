@@ -165,7 +165,6 @@
 </head>
 <body class="blueprint-dot">
 
-<!-- ── LOCK SCREEN ───────────────────────────────────────────────────── -->
 <div id="lock-screen">
   <div class="lock-container">
     <div class="font-serif italic text-4xl mb-4" style="color:var(--gold)">A</div>
@@ -193,10 +192,8 @@
   </div>
 </div>
 
-<!-- ── MAIN APP ──────────────────────────────────────────────────────── -->
 <div id="main-app" class="min-h-screen flex-col">
 
-  <!-- Nav -->
   <nav class="p-5 flex justify-between items-center sticky top-0 z-50 bg-stone-50/90 backdrop-blur-md border-b border-stone-200">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 border border-[#b2945e]/40 rounded-full flex items-center justify-center">
@@ -214,15 +211,12 @@
 
   <main class="flex-1 max-w-3xl mx-auto w-full p-6 pb-32">
 
-    <!-- Dynamic content -->
     <div id="step-content"></div>
 
-    <!-- Validation error banner -->
     <div id="validation-banner" class="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm font-medium" style="display:none">
       <span id="validation-message"></span>
     </div>
 
-    <!-- Navigation controls -->
     <div class="mt-12 pt-8 border-t border-stone-200 flex items-center justify-between">
       <button
         id="prev-btn"
@@ -243,7 +237,6 @@
   </main>
 </div>
 
-<!-- Save indicator toast -->
 <div id="save-indicator">Session saved</div>
 
 <script>
@@ -326,7 +319,8 @@ const CYCLES = [
     type: 'void',
     number: '05',
     title: 'The Void',
-    label: 'In the silence, what became clear?',
+    lead: 'Action without integration is just more noise. You have identified the friction and decided on a pivot. Now, you must stop. For the next 60 seconds, do absolutely nothing. Your nervous system needs this pause to metabolize the cortisol and write the new neural pathway. Do not force an answer. Just observe what surfaces.',
+    label: 'In the stillness, what became clear?',
     required: ['stillness'],
     requiredMessage: 'Sit with the silence and write what surfaced — even a fragment.'
   },
@@ -704,6 +698,7 @@ const renderers = {
     return `
       <div class="space-y-8 mt-6">
         ${cycleHeader(cycle)}
+        <p class="font-serif text-xl text-stone-700 leading-relaxed">${cycle.lead}</p>
         <div class="flex justify-center py-8">
           <div class="w-32 h-32 rounded-full border-2 border-stone-200 flex items-center justify-center animate-pulse">
             <div class="w-24 h-24 rounded-full bg-stone-100 flex items-center justify-center">
