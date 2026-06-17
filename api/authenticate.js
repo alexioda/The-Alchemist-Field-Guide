@@ -8,7 +8,7 @@
 // In Vercel dashboard → Project → Settings → Environment Variables
 // Then redeploy. Never hardcode ciphers in source.
 
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
