@@ -85,23 +85,23 @@
     /* ── ANIMATIONS ──────────────────────────────────────────────── */
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
+      to { opacity: 1; transform: translateY(0); }
     }
     @keyframes slideInRight {
       from { opacity: 0; transform: translateX(20px); }
-      to   { opacity: 1; transform: translateX(0); }
+      to { opacity: 1; transform: translateX(0); }
     }
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
-      20%       { transform: translateX(-8px); }
-      40%       { transform: translateX(8px); }
-      60%       { transform: translateX(-5px); }
-      80%       { transform: translateX(5px); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
     }
 
-    .animate-fade-in-up  { animation: fadeInUp 0.8s ease forwards; }
+    .animate-fade-in-up { animation: fadeInUp 0.8s ease forwards; }
     .animate-slide-right { animation: slideInRight 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
-    .animate-shake       { animation: shake 0.4s ease; }
+    .animate-shake { animation: shake 0.4s ease; }
 
     /* ── RANGE SLIDER ────────────────────────────────────────────── */
     input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
@@ -256,9 +256,9 @@ const CYCLES = [
     subtitle: 'The Architecture',
     body: 'You are not here to "fix" yourself. You are here to learn the mechanics of your own energy.',
     cards: [
-      { icon: '⚡', heading: 'The Biometrics',  text: 'We do not assume stress. We measure it. Every cycle begins with a scan.' },
-      { icon: '⚖️', heading: 'The Fork',        text: 'Stress hits the Body (Weight) or the Mind (Noise). Learn to treat them differently.' },
-      { icon: '🔥', heading: 'The Alchemy',     text: 'We do not calm down. We transform friction into fuel for action.' },
+      { icon: '⚡', heading: 'The Biometrics', text: 'We do not assume stress. We measure it. Every cycle begins with a scan.' },
+      { icon: '⚖️', heading: 'The Fork', text: 'Stress hits the Body (Weight) or the Mind (Noise). Learn to treat them differently.' },
+      { icon: '🔥', heading: 'The Alchemy', text: 'We do not calm down. We transform friction into fuel for action.' },
     ]
   },
   {
@@ -270,9 +270,9 @@ const CYCLES = [
     sliderLabel: 'Friction Baseline',
     sliderSub: 'Quantify current state',
     archetypes: [
-      { name: 'The Rusher',  desc: '"I don\'t have time." Anxiety, speed.' },
+      { name: 'The Rusher', desc: '"I don\'t have time." Anxiety, speed.' },
       { name: 'The Freezer', desc: '"I\'m overwhelmed." Paralysis, fog.' },
-      { name: 'The Fixer',   desc: '"It\'s all on me." Burden, tension.' },
+      { name: 'The Fixer', desc: '"It\'s all on me." Burden, tension.' },
     ],
     // Validation
     required: ['archetype'],
@@ -351,10 +351,10 @@ const CYCLES = [
 
 // Archetype-specific prompts — data, not logic
 const ARCHETYPE_PROMPTS = {
-  'The Rusher':  'The Rusher says: "There isn\'t enough time." I keep thinking that...',
+  'The Rusher': 'The Rusher says: "There isn\'t enough time." I keep thinking that...',
   'The Freezer': 'The Freezer says: "I can\'t handle this." I keep thinking that...',
-  'The Fixer':   'The Fixer says: "It\'s all on me." I keep thinking that...',
-  default:       'I keep thinking that...'
+  'The Fixer': 'The Fixer says: "It\'s all on me." I keep thinking that...',
+  default: 'I keep thinking that...'
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -426,16 +426,16 @@ function confirmReset() {
 // ════════════════════════════════════════════════════════════════════
 
 async function authenticate() {
-  const input   = document.getElementById('cipher-input').value.trim();
-  const btn     = document.getElementById('auth-btn');
+  const input = document.getElementById('cipher-input').value.trim();
+  const btn = document.getElementById('auth-btn');
   const loading = document.getElementById('auth-loading');
-  const error   = document.getElementById('lock-error');
+  const error = document.getElementById('lock-error');
 
   if (!input) return;
 
   btn.disabled = true;
   loading.style.display = 'block';
-  error.style.display   = 'none';
+  error.style.display = 'none';
 
   try {
     const res = await fetch('/api/authenticate', {
@@ -468,8 +468,8 @@ async function authenticate() {
 }
 
 function showAuthError() {
-  const error  = document.getElementById('lock-error');
-  const input  = document.getElementById('cipher-input');
+  const error = document.getElementById('lock-error');
+  const input = document.getElementById('cipher-input');
   error.style.display = 'block';
   input.value = '';
   input.classList.add('animate-shake');
@@ -522,7 +522,7 @@ function validateStep() {
 
   if (!valid) {
     const banner = document.getElementById('validation-banner');
-    const msg    = document.getElementById('validation-message');
+    const msg = document.getElementById('validation-message');
     msg.textContent = cycle.requiredMessage;
     banner.style.display = 'block';
     banner.classList.add('animate-shake');
@@ -567,7 +567,7 @@ const renderers = {
   },
 
   anchor(cycle) {
-    const arch   = appState.entries.cycle1.archetype;
+    const arch = appState.entries.cycle1.archetype;
     const preVal = appState.entries.cycle1.pre_friction;
     return `
       <div class="space-y-8 mt-6">
@@ -630,7 +630,7 @@ const renderers = {
   },
 
   mind(cycle) {
-    const arch   = appState.entries.cycle1.archetype;
+    const arch = appState.entries.cycle1.archetype;
     const prompt = ARCHETYPE_PROMPTS[arch] || ARCHETYPE_PROMPTS.default;
     return `
       <div class="space-y-8 mt-6">
@@ -769,7 +769,7 @@ const renderers = {
   },
 
   pattern(cycle) {
-    const e       = appState.entries;
+    const e = appState.entries;
     const postVal = e.cycle7.post_friction;
     return `
       <div class="space-y-8 mt-6">
@@ -800,23 +800,25 @@ const renderers = {
           <h3 class="font-sans text-xs font-bold uppercase tracking-widest text-[#b2945e] mb-6">
             ${cycle.blueprintTitle}
           </h3>
-          <div class="space-y-4 font-serif text-lg">
-            <p>
-              <strong class="font-sans text-xs uppercase tracking-widest text-stone-500 mr-2">Archetype:</strong>
-              ${escHtml(e.cycle1.archetype) || '<span class="italic text-stone-500">None selected</span>'}
-            </p>
-            <p>
-              <strong class="font-sans text-xs uppercase tracking-widest text-stone-500 mr-2">Core Fear:</strong>
-              ${escHtml(e.cycle4.core_fear) || '<span class="italic text-stone-500">Unanswered</span>'}
-            </p>
-            <p>
-              <strong class="font-sans text-xs uppercase tracking-widest text-stone-500 mr-2">The Pivot:</strong>
-              ${escHtml(e.cycle4.sovereign_pivot) || '<span class="italic text-stone-500">Unanswered</span>'}
-            </p>
-            <p class="font-sans text-xs uppercase tracking-widest text-[#b2945e] mt-6 mb-2 block">
-              Final Directive:
-            </p>
-            <p class="italic text-white bg-stone-800 p-4 rounded-lg">
+          
+          <!-- AI ANALYSIS CONTAINER -->
+          <div id="ai-analysis-container" class="mb-8 p-6 bg-stone-800/50 rounded-xl border border-stone-700">
+            <div id="ai-loading" class="flex flex-col items-center justify-center py-4 space-y-3 opacity-70">
+              <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-[#b2945e]"></i>
+              <span class="font-sans text-[10px] uppercase tracking-widest text-stone-400">Extracting Pattern Architecture...</span>
+            </div>
+            <div id="ai-results" style="display: none;">
+              <p id="ai-analysis-text" class="font-serif text-lg leading-relaxed text-stone-200 mb-4"></p>
+              <div class="border-t border-stone-700 pt-4 mt-4">
+                <span class="font-sans text-[10px] uppercase tracking-widest text-[#b2945e] block mb-2">The Structural Gap:</span>
+                <p id="ai-gap-text" class="font-serif text-md italic text-stone-400"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4 font-serif text-lg border-t border-stone-800 pt-6">
+            <p class="font-sans text-[10px] uppercase tracking-widest text-stone-500 mb-4">Your Authored Decree:</p>
+            <p class="italic text-white">
               "I commit to ${escHtml(e.cycle6.action) || '___'} by ${escHtml(e.cycle6.commitment) || '___'}."
             </p>
           </div>
@@ -860,9 +862,9 @@ function setArchetype(name) {
 }
 
 function calculateDelta() {
-  const pre     = appState.entries.cycle1.pre_friction;
-  const post    = appState.entries.cycle7.post_friction;
-  const delta   = post - pre;
+  const pre = appState.entries.cycle1.pre_friction;
+  const post = appState.entries.cycle7.post_friction;
+  const delta = post - pre;
   const display = document.getElementById('delta-display');
   if (!display) return;
 
@@ -875,13 +877,66 @@ function calculateDelta() {
   }
 }
 
+async function runPatternAnalysis() {
+  const container = document.getElementById('ai-analysis-container');
+  const loading = document.getElementById('ai-loading');
+  const results = document.getElementById('ai-results');
+  const analysisText = document.getElementById('ai-analysis-text');
+  const gapText = document.getElementById('ai-gap-text');
+
+  if (!container) return; // Not on the final cycle
+
+  const e = appState.entries;
+  const payload = {
+    archetype: e.cycle1.archetype,
+    friction_entry: e.cycle1.pre_friction,
+    somatic: e.cycle2.sensation,
+    mental_loop: e.cycle3.thought,
+    reframe: e.cycle3.reframe,
+    core_fear: e.cycle4.core_fear,
+    sovereign_pivot: e.cycle4.sovereign_pivot,
+    stillness: e.cycle5.stillness,
+    golden_shadow: e.cycle6.golden_shadow,
+    commitment_action: e.cycle6.action,
+    commitment_by: e.cycle6.commitment,
+    friction_exit: e.cycle7.post_friction
+  };
+
+  try {
+    const res = await fetch('/api/pattern-analysis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    
+    loading.style.display = 'none';
+    results.style.display = 'block';
+
+    if (data.crisis) {
+      analysisText.innerHTML = `<span class="text-rose-400">${escHtml(data.message)}</span>`;
+      document.getElementById('ai-gap-text').parentElement.style.display = 'none';
+    } else {
+      analysisText.textContent = data.analysis;
+      gapText.textContent = data.gap || "The loop is closed. Execute the decree.";
+    }
+  } catch (err) {
+    console.error("Failed to fetch pattern analysis:", err);
+    loading.style.display = 'none';
+    results.style.display = 'block';
+    analysisText.textContent = "The architecture was recorded, but the network failed to return the clinical analysis. Your decree remains sovereign. Execute the action.";
+    document.getElementById('ai-gap-text').parentElement.style.display = 'none';
+  }
+}
+
 // ════════════════════════════════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════════════════════════════════
 
 function renderStep() {
-  const cycle      = CYCLES[appState.currentStep];
-  const renderer   = renderers[cycle.type];
+  const cycle = CYCLES[appState.currentStep];
+  const renderer = renderers[cycle.type];
   const contentDiv = document.getElementById('step-content');
 
   // Clear animation class, force reflow via class toggle (not void hack)
@@ -895,9 +950,9 @@ function renderStep() {
   document.getElementById('validation-banner').style.display = 'none';
 
   // Progress bar — excludes intro from count so cycle 1 = first real step
-  const total   = CYCLES.length - 1;
+  const total = CYCLES.length - 1;
   const current = appState.currentStep;
-  const pct     = current === 0 ? 0 : Math.round((current / total) * 100);
+  const pct = current === 0 ? 0 : Math.round((current / total) * 100);
   document.getElementById('progress-bar').style.width = `${pct}%`;
 
   // Buttons
@@ -907,15 +962,18 @@ function renderStep() {
   prevBtn.disabled = appState.currentStep === 0;
 
   const isLast = appState.currentStep === CYCLES.length - 1;
-  nextBtn.innerHTML  = isLast ? 'Return to Hub' : 'Next →';
-  nextBtn.disabled   = false;
+  nextBtn.innerHTML = isLast ? 'Return to Hub' : 'Next →';
+  nextBtn.disabled = false;
 
   // Save step position
   appState.currentStep = appState.currentStep; // already set
   saveState();
 
-  // Recalculate delta if on final step
-  if (isLast) calculateDelta();
+  // Recalculate delta and trigger AI Analysis if on final step
+  if (isLast) {
+    calculateDelta();
+    runPatternAnalysis(); 
+  }
 
   lucide.createIcons();
 }
