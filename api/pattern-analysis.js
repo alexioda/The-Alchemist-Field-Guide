@@ -107,7 +107,13 @@ module.exports = async (req, res) => {
     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
     { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+    // Intentionally looser than the other categories: Gemini's own
+    // "dangerous content" filter was blocking (silently returning nothing)
+    // on intense-but-not-actually-crisis language that this app needs to
+    // reflect back to users. containsCrisisLanguage() above already
+    // intercepts genuine crisis disclosures before they reach Gemini at
+    // all, so this filter isn't the safety net for that case.
+    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
   ];
 
   try {
