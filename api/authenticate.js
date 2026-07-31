@@ -8,6 +8,8 @@
 // In Vercel dashboard → Project → Settings → Environment Variables
 // Then redeploy. Never hardcode ciphers in source.
 
+const crypto = require('crypto');
+
 module.exports = function handler(req, res) {
   // Only allow POST
   if (req.method !== 'POST') {
@@ -30,17 +32,19 @@ module.exports = function handler(req, res) {
   ].filter(Boolean); // removes undefined slots
 
   if (validCiphers.length === 0) {
-    // Fallback for local dev without env vars set
-    console.warn('No CIPHER env vars set. Using dev fallback.');
-    if (input === 'DEVMODE') {
-      return res.status(200).json({ success: true });
+    // Fallback for local dev without env vars set. Restricted to non-production
+    // deployments so a forgotten CIPHER_* var on Vercel can't silently open a
+    // known-password ("DEVMODE") backdoor in production.
+    if (process.env.VERCEL_ENV !== 'production') {
+      console.warn('No CIPHER env vars set. Using dev fallback.');
+      if (input === 'DEVMODE') {
+        return res.status(200).json({ success: true, token: generateToken() });
+      }
     }
     return res.status(401).json({ success: false, error: 'Invalid cipher' });
   }
 
   if (validCiphers.includes(input)) {
-    // Issue a simple session token
-    // For production, replace with a signed JWT or httpOnly cookie
     return res.status(200).json({ success: true, token: generateToken() });
   }
 
@@ -50,7 +54,19 @@ module.exports = function handler(req, res) {
 }
 
 function generateToken() {
-  // Simple token — replace with crypto.randomUUID() or JWT in production
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  // Signed, timestamped session token so api/pattern-analysis.js can verify
+  // a request actually came from someone who passed the cipher gate, instead
+  // of relying on the Origin header alone (trivially spoofable by non-browser
+  // clients). SETUP: set SESSION_SECRET in Vercel env vars to enable
+  // verification — without it, tokens are issued unsigned and
+  // pattern-analysis.js falls back to Origin-only checks, same as before.
+  const issuedAt = Date.now().toString();
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    console.warn('No SESSION_SECRET set. Issuing unsigned session token.');
+    return `${issuedAt}.unsigned`;
+  }
+  const signature = crypto.createHmac('sha256', secret).update(issuedAt).digest('hex');
+  return `${issuedAt}.${signature}`;
 }
 

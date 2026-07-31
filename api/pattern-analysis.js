@@ -2,11 +2,36 @@
 // Vercel serverless function — reads a full Field Guide session and returns
 // a clinical pattern analysis + gap identification.
 //
-// Uses the same ADAPTIV_MIND identity and containsCrisisLanguage as generate-decree.js.
+// Uses the shared ADAPTIV_MIND identity and containsCrisisLanguage from lib/adaptiv-mind.js.
 // Requires: GEMINI_API_KEY (already set in Vercel from SCC deployment).
+// Requires: SESSION_SECRET, shared with api/authenticate.js, to verify the
+// session token issued at the cipher gate (see verifySessionToken below).
 
+const crypto = require("crypto");
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require("@google/generative-ai");
 const { ADAPTIV_MIND, containsCrisisLanguage } = require("../lib/adaptiv-mind");
+
+// Verifies the HMAC-signed token issued by api/authenticate.js, so this
+// endpoint isn't gated by the Origin header alone (spoofable by any non-
+// browser client). If SESSION_SECRET isn't configured, verification can't
+// happen and this falls back to the pre-existing Origin-only check.
+function isValidSessionToken(token) {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) return true;
+  if (!token || typeof token !== "string") return false;
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  const [issuedAt, signature] = parts;
+  if (!/^\d+$/.test(issuedAt)) return false;
+  const expected = crypto.createHmac("sha256", secret).update(issuedAt).digest("hex");
+  const sigBuf = Buffer.from(signature, "hex");
+  const expBuf = Buffer.from(expected, "hex");
+  if (sigBuf.length !== expBuf.length) return false;
+  if (!crypto.timingSafeEqual(sigBuf, expBuf)) return false;
+  const MAX_AGE_MS = 24 * 60 * 60 * 1000; // tokens are valid for 24 hours
+  const age = Date.now() - Number(issuedAt);
+  return age >= 0 && age <= MAX_AGE_MS;
+}
 
 const ALLOWED_ORIGINS = [
   "https://liveadaptiv.com",
@@ -34,6 +59,10 @@ module.exports = async (req, res) => {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  if (!isValidSessionToken(req.headers["x-alchemist-token"])) {
+    return res.status(401).json({ error: "Invalid or expired session. Please re-authenticate." });
   }
 
   const {
@@ -78,6 +107,12 @@ module.exports = async (req, res) => {
     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
     { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+    // Intentionally looser than the other categories: Gemini's own
+    // "dangerous content" filter was blocking (silently returning nothing)
+    // on intense-but-not-actually-crisis language that this app needs to
+    // reflect back to users. containsCrisisLanguage() above already
+    // intercepts genuine crisis disclosures before they reach Gemini at
+    // all, so this filter isn't the safety net for that case.
     { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
   ];
 
@@ -86,7 +121,6 @@ module.exports = async (req, res) => {
 
     // ── PASS 1: Extract structural pattern from raw session ─────────
     // Low temperature — clinical extraction, not creativity.
-    // mirrors the preprocessing pass in generate-decree.js
     const extractModel = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       safetySettings,
@@ -154,8 +188,8 @@ Return ONLY valid JSON, no preamble, no markdown:
     }
 
     // ── PASS 2: Write the clinical analysis in LiveAdaptiv voice ────
-    // mirrors the decree generation pass — same identity, same voice rules,
-    // but the output is pattern analysis, not a personal declaration
+    // same identity, same voice rules, but the output is pattern analysis,
+    // not a personal declaration
     const analysisModel = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       safetySettings,
