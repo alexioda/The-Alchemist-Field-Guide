@@ -191,6 +191,9 @@ Authenticate
 <div id="auth-loading" class="text-slate-500 text-xs mt-3" style="display:none">
 Verifying...
 </div>
+<div class="text-slate-600 text-[10px] mt-6 leading-relaxed">
+Self-guided reflection tool — not therapy or medical advice. In crisis, call or text 988.
+</div>
 </div>
 </div>
 <div id="main-app" class="min-h-screen flex-col">
@@ -213,6 +216,10 @@ Verifying...
 <div id="print-summary"></div>
 <div id="validation-banner" class="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm font-medium" style="display:none">
 <span id="validation-message"></span>
+</div>
+<div id="crisis-banner" class="no-print" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#1c1917; color:#fafaf9; padding:16px 20px; text-align:center; font-size:13px; line-height:1.5;">
+<span>The system is quiet right now. Your word is enough. If you are carrying a weight heavier than stress, please reach out to someone you trust — or call or text <strong>988</strong>.</span>
+<button onclick="document.getElementById('crisis-banner').style.display='none'" style="margin-left:12px; background:transparent; border:1px solid #57534e; color:#fafaf9; padding:2px 10px; border-radius:100px; font-size:11px; cursor:pointer;">Dismiss</button>
 </div>
 <div class="mt-12 pt-8 border-t border-stone-200 flex items-center justify-between no-print">
 <button
@@ -377,10 +384,43 @@ showSaveIndicator();
 console.warn('Could not save session:', e);
 }
 }
+// Kept in sync with containsCrisisLanguage() in lib/adaptiv-mind.js. This
+// runs client-side on every free-text field as it's entered, so a crisis
+// disclosure in an early cycle (2-6) surfaces the resource immediately
+// instead of only being screened by the server at the final cycle.
+const CLIENT_CRISIS_PATTERNS = [
+/want to disappear/i,
+/can'?t do this anymore/i,
+/want to (end|kill) (it|myself|my ?self)/i,
+/want to die/i,
+/wish i (was|were) dead/i,
+/don'?t want to (be here|exist|live) anymore/i,
+/no reason to (live|go on)/i,
+/end(ing)? my (own )?life/i,
+/kill(ing)? myself/i,
+/suicide|suicidal/i,
+/self[- ]?harm/i,
+/harm(ing)? myself/i,
+/hurt(ing)? myself/i,
+/unalive/i,
+];
+function clientDetectsCrisisLanguage(text) {
+if (!text) return false;
+return CLIENT_CRISIS_PATTERNS.some(p => p.test(text));
+}
+function showCrisisNotice() {
+const banner = document.getElementById('crisis-banner');
+if (banner) banner.style.display = 'block';
+}
 function saveEntry(cycle, field, value) {
 appState.entries[cycle][field] = value;
 clearTimeout(saveTimer);
-saveTimer = setTimeout(saveState, 800);
+saveTimer = setTimeout(() => {
+saveState();
+if (typeof value === 'string' && clientDetectsCrisisLanguage(value)) {
+showCrisisNotice();
+}
+}, 800);
 }
 function showSaveIndicator() {
 const el = document.getElementById('save-indicator');
@@ -571,7 +611,7 @@ class="w-full bg-stone-50 border border-stone-200 rounded-lg p-4
 focus:border-[#b2945e] outline-none h-32 resize-none
 text-stone-700 font-serif italic text-lg journal-input"
 placeholder="${cycle.placeholder}"
->${appState.entries.cycle2.sensation}</textarea>
+>${escHtml(appState.entries.cycle2.sensation)}</textarea>
 </div>
 </div>`;
 },
@@ -594,7 +634,7 @@ oninput="saveEntry('cycle3', 'thought', this.value)"
 class="w-full bg-transparent border-b border-stone-200 focus:border-stone-900
 outline-none h-32 resize-none text-stone-600 font-serif text-lg italic mt-2 journal-input"
 placeholder="${prompt}"
->${appState.entries.cycle3.thought}</textarea>
+>${escHtml(appState.entries.cycle3.thought)}</textarea>
 </div>
 <div class="p-6 bg-stone-900 rounded-xl text-stone-300">
 <label class="font-sans text-xs font-bold uppercase tracking-widest text-[#b2945e] block">
@@ -605,7 +645,7 @@ oninput="saveEntry('cycle3', 'reframe', this.value)"
 class="w-full bg-transparent border-b border-stone-700 focus:border-[#b2945e]
 outline-none h-32 resize-none text-white font-serif text-lg mt-2 journal-input"
 placeholder="${cycle.factPlaceholder}"
->${appState.entries.cycle3.reframe}</textarea>
+>${escHtml(appState.entries.cycle3.reframe)}</textarea>
 </div>
 </div>
 </div>`;
@@ -634,7 +674,7 @@ class="w-full bg-transparent border-b border-stone-300 focus:border-[#b2945e]
 focus:outline-none min-h-[80px] journal-input resize-none
 text-stone-700 font-serif text-lg italic"
 placeholder="${cycle.pivotPlaceholder}"
->${appState.entries.cycle4.sovereign_pivot}</textarea>
+>${escHtml(appState.entries.cycle4.sovereign_pivot)}</textarea>
 </div>
 </div>`;
 },
@@ -658,7 +698,7 @@ class="w-full bg-transparent border-b border-stone-300 focus:border-[#b2945e]
 focus:outline-none min-h-[100px] journal-input resize-none
 text-stone-700 font-serif text-lg italic"
 placeholder="..."
->${appState.entries.cycle5.stillness}</textarea>
+>${escHtml(appState.entries.cycle5.stillness)}</textarea>
 </div>
 </div>`;
 },
@@ -679,7 +719,7 @@ class="w-full bg-stone-800/50 border-b border-stone-600 text-white
 font-serif text-lg italic p-2 focus:outline-none focus:border-[#b2945e]
 rounded relative z-10 journal-input"
 placeholder="${cycle.shadowPlaceholder}"
->${appState.entries.cycle6.golden_shadow}</textarea>
+>${escHtml(appState.entries.cycle6.golden_shadow)}</textarea>
 </div>
 <div class="bg-[#b2945e]/10 border border-[#b2945e]/30 p-8 rounded-xl">
 <label class="font-sans text-xs font-bold uppercase tracking-widest text-stone-800 block mb-4">
@@ -881,7 +921,10 @@ friction_exit: e.cycle7.post_friction
 try {
 const res = await fetch('/api/pattern-analysis', {
 method: 'POST',
-headers: { 'Content-Type': 'application/json' },
+headers: {
+'Content-Type': 'application/json',
+'X-Alchemist-Token': sessionStorage.getItem('la_auth_token') || ''
+},
 body: JSON.stringify(payload)
 });
 if (!res.ok) throw new Error(`Server responded ${res.status}`);
