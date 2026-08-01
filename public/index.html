@@ -244,111 +244,11 @@ lucide.createIcons();
 // ════════════════════════════════════════════════════════════════════
 // CONTENT DATA
 // ════════════════════════════════════════════════════════════════════
-const CYCLES = [
-{
-id: 'intro',
-type: 'intro',
-title: 'The Seven Cycles.',
-subtitle: 'The Architecture',
-body: 'You are not here to "fix" yourself. You are here to learn the mechanics of your own energy.',
-cards: [
-{ icon: '⚡', heading: 'The Biometrics', text: 'We do not assume stress. We measure it. Every cycle begins with a scan.' },
-{ icon: '⚖️', heading: 'The Fork', text: 'Stress hits the Body (Weight) or the Mind (Noise). Learn to treat them differently.' },
-{ icon: '🔥', heading: 'The Alchemy', text: 'We do not calm down. We transform friction into fuel for action.' },
-]
-},
-{
-id: 'cycle1',
-type: 'anchor',
-number: '01',
-title: 'The Anchor',
-lead: 'The first step in alchemy is locating the material. How does your stress manifest today?',
-sliderLabel: 'Friction Baseline',
-sliderSub: 'Quantify current state',
-archetypes: [
-{ name: 'The Rusher', desc: '"I don\'t have time." Anxiety, speed.' },
-{ name: 'The Freezer', desc: '"I\'m overwhelmed." Paralysis, fog.' },
-{ name: 'The Fixer', desc: '"It\'s all on me." Burden, tension.' },
-],
-required: ['archetype'],
-requiredMessage: 'Select your archetype to continue — this shapes every cycle ahead.'
-},
-{
-id: 'cycle2',
-type: 'somatic',
-number: '02',
-title: 'The Body',
-lead: 'Before the mind spins a story, the body sounds an alarm. Where is the physical friction located right now?',
-fieldLabel: 'The Somatic Map',
-placeholder: 'e.g., My chest feels tight and my jaw is locked...',
-required: ['sensation'],
-requiredMessage: 'Locate the physical friction before moving forward. Even one sentence.'
-},
-{
-id: 'cycle3',
-type: 'mind',
-number: '03',
-title: 'The Mind',
-loopLabel: 'The Loop (Fiction)',
-factLabel: 'The Fact (Data)',
-factPlaceholder: 'The absolute objective truth is...',
-required: ['thought', 'reframe'],
-requiredMessage: 'Complete both the Fiction and the Fact before proceeding.'
-},
-{
-id: 'cycle4',
-type: 'pivot',
-number: '04',
-title: 'The Pivot',
-lead: 'The Pivot is the exact moment you stop managing the symptom and address the root cause. You have identified the physical sensation and the mental loop. Now, we challenge the foundation.',
-fearLabel: 'What is the core fear or assumption driving this friction?',
-fearPlaceholder: 'e.g., I am afraid that if I fail this, I lose my status...',
-pivotLabel: 'The Sovereign Pivot',
-pivotSub: 'What is the highest-leverage action you can take right now despite that fear?',
-pivotPlaceholder: 'e.g., I will send the email outlining the risk, because my status is built on honesty, not perfection...',
-required: ['core_fear', 'sovereign_pivot'],
-requiredMessage: 'Name the fear and the pivot before moving on — these are the load-bearing walls.'
-},
-{
-id: 'cycle5',
-type: 'void',
-number: '05',
-title: 'The Void',
-lead: 'Action without integration is just more noise. You have identified the friction and decided on a pivot. Now, you must stop. For the next 60 seconds, do absolutely nothing. Your nervous system needs this pause to metabolize the cortisol and write the new neural pathway. Do not force an answer. Just observe what surfaces.',
-label: 'In the stillness, what became clear?',
-required: ['stillness'],
-requiredMessage: 'Sit with the silence and write what surfaced — even a fragment.'
-},
-{
-id: 'cycle6',
-type: 'output',
-number: '06',
-title: 'The Output',
-shadowTitle: 'The Golden Shadow',
-shadowDesc: 'The Saboteur holds your fears. The Golden Shadow holds your unlived greatness. The traits you admire in others are merely your own latent potential waiting to be claimed.',
-shadowLabel: 'Who is your hero, and what trait do they have that you "lack"?',
-shadowPlaceholder: 'I admire [Name] because they are [Trait]. This trait lives in me as...',
-contractLabel: 'The Contract',
-required: ['action', 'commitment'],
-requiredMessage: 'Complete the Contract — the commitment is the entire point of this cycle.'
-},
-{
-id: 'cycle7',
-type: 'pattern',
-number: '07',
-title: 'Pattern Rec',
-lead: 'You have shifted your baseline. Let\'s quantify the alchemy.',
-sliderLabel: 'Post-Protocol Audit',
-sliderSub: 'Re-evaluate your friction state',
-blueprintTitle: 'Your Execution Blueprint',
-}
-];
-const ARCHETYPE_PROMPTS = {
-'The Rusher': 'The Rusher says: "There isn\'t enough time." I keep thinking that...',
-'The Freezer': 'The Freezer says: "I can\'t handle this." I keep thinking that...',
-'The Fixer': 'The Fixer says: "It\'s all on me." I keep thinking that...',
-default: 'I keep thinking that...'
-};
+// Fetched from /api/content only after a verified session — see
+// api/authenticate.js and api/content.js. Not present in this file's
+// source, unlike the CYCLES/ARCHETYPE_PROMPTS literals this replaces.
+let CYCLES = null;
+let ARCHETYPE_PROMPTS = null;
 // ════════════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════════════
@@ -488,8 +388,34 @@ setTimeout(() => {
 lock.style.display = 'none';
 const app = document.getElementById('main-app');
 app.classList.add('visible', 'animate-fade-in-up');
-renderStep();
+loadFieldGuideContent();
 }, 500);
+}
+async function loadFieldGuideContent() {
+const token = sessionStorage.getItem('la_auth_token');
+try {
+const res = await fetch('/api/content', {
+headers: { 'X-Alchemist-Token': token || '' }
+});
+const data = await res.json();
+if (!res.ok) {
+showAuthError(data.error || 'Could not load the Field Guide.');
+document.getElementById('lock-screen').style.display = 'flex';
+document.getElementById('lock-screen').style.opacity = '1';
+document.getElementById('main-app').classList.remove('visible', 'animate-fade-in-up');
+if (res.status === 401) sessionStorage.removeItem('la_auth_token');
+return;
+}
+CYCLES = data.cycles;
+ARCHETYPE_PROMPTS = data.archetypePrompts;
+renderStep();
+} catch (e) {
+console.error('Failed to load Field Guide content:', e);
+showAuthError('CONNECTION ERROR. TRY AGAIN.');
+document.getElementById('lock-screen').style.display = 'flex';
+document.getElementById('lock-screen').style.opacity = '1';
+document.getElementById('main-app').classList.remove('visible', 'animate-fade-in-up');
+}
 }
 document.getElementById('cipher-input').addEventListener('keypress', e => {
 if (e.key === 'Enter') authenticate();
@@ -1029,7 +955,7 @@ if (token) {
 document.getElementById('lock-screen').style.display = 'none';
 const app = document.getElementById('main-app');
 app.classList.add('visible');
-renderStep();
+loadFieldGuideContent();
 }
 });
 </script>
