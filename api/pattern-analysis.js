@@ -28,7 +28,7 @@ function isValidSessionToken(token) {
   const expBuf = Buffer.from(expected, "hex");
   if (sigBuf.length !== expBuf.length) return false;
   if (!crypto.timingSafeEqual(sigBuf, expBuf)) return false;
-  const MAX_AGE_MS = 24 * 60 * 60 * 1000; // tokens are valid for 24 hours
+  const MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000; // matches api/content.js — sessions remembered for a year
   const age = Date.now() - Number(issuedAt);
   return age >= 0 && age <= MAX_AGE_MS;
 }
