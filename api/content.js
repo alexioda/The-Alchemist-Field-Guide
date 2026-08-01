@@ -17,6 +17,15 @@
 //
 // SETUP: set SESSION_SECRET in this project's Vercel environment variables
 // (same value used by api/authenticate.js and api/pattern-analysis.js).
+//
+// Sessions are stored client-side in localStorage (not sessionStorage) so a
+// buyer stays logged in on a given device across tabs/restarts for up to a
+// year, whether they got in via the manual cipher or a Lemon Squeezy license
+// key (see api/authenticate.js) — a new device still needs one of those
+// entered once. api/pattern-analysis.js's MAX_AGE_MS is kept in sync with
+// this file's, since both verify the same token and a mismatch would let
+// the guide content keep loading while the AI analysis silently started
+// rejecting the same session as expired.
 
 const crypto = require("crypto");
 
@@ -36,7 +45,7 @@ function isValidSessionToken(token) {
   if (sigBuf.length !== expBuf.length) return false;
   if (!crypto.timingSafeEqual(sigBuf, expBuf)) return false;
 
-  const MAX_AGE_MS = 24 * 60 * 60 * 1000; // matches api/pattern-analysis.js
+  const MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000; // matches api/pattern-analysis.js — sessions remembered for a year
   const age = Date.now() - Number(issuedAt);
   return age >= 0 && age <= MAX_AGE_MS;
 }

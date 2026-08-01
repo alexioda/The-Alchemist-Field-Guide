@@ -10,7 +10,7 @@
 
 const crypto = require('crypto');
 
-module.exports = function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -22,7 +22,8 @@ module.exports = function handler(req, res) {
     return res.status(400).json({ success: false, error: 'No cipher provided' });
   }
 
-  const input = cipher.trim().toUpperCase();
+  const rawInput   = cipher.trim();
+  const upperInput = rawInput.toUpperCase();
 
   // Ciphers live in environment variables — never in client code
   const validCiphers = [
@@ -37,20 +38,49 @@ module.exports = function handler(req, res) {
     // known-password ("DEVMODE") backdoor in production.
     if (process.env.VERCEL_ENV !== 'production') {
       console.warn('No CIPHER env vars set. Using dev fallback.');
-      if (input === 'DEVMODE') {
+      if (upperInput === 'DEVMODE') {
         return res.status(200).json({ success: true, token: generateToken() });
       }
     }
-    return res.status(401).json({ success: false, error: 'Invalid cipher' });
+  } else if (validCiphers.includes(upperInput)) {
+    return res.status(200).json({ success: true, token: generateToken() });
   }
 
-  if (validCiphers.includes(input)) {
+  // Not a manual cipher — check whether it's a real Lemon Squeezy license key
+  // (issued automatically on purchase, including $0 orders via a 100%-off
+  // discount code, so comped access can flow through Lemon Squeezy too).
+  if (await isValidLicenseKey(rawInput)) {
     return res.status(200).json({ success: true, token: generateToken() });
   }
 
   // Rate limiting note: for production, add IP-based rate limiting here
   // e.g. using Vercel KV or Upstash Redis to track failed attempts
   return res.status(401).json({ success: false, error: 'Invalid cipher' });
+}
+
+async function isValidLicenseKey(licenseKey) {
+  if (!licenseKey) return false;
+
+  try {
+    const params = new URLSearchParams({ license_key: licenseKey });
+    const resp = await fetch('https://api.lemonsqueezy.com/v1/licenses/validate', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
+
+    if (!resp.ok) return false;
+    const data = await resp.json();
+    return data.valid === true;
+  } catch (e) {
+    // Network hiccup or Lemon Squeezy outage — fail closed, not a 500,
+    // so this can't be used to crash the endpoint.
+    console.warn('Lemon Squeezy license validation error:', e);
+    return false;
+  }
 }
 
 function generateToken() {

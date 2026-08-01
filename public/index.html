@@ -172,13 +172,13 @@ font-family: 'Cormorant Garamond', serif;
 <div class="font-serif italic text-4xl mb-4" style="color:var(--gold)">A</div>
 <div class="text-white text-lg font-semibold mb-2">The Field Guide</div>
 <div class="text-slate-400 text-xs mb-6 leading-relaxed">
-Secured Clinical Protocol.<br>Enter your access cipher.
+Secured Clinical Protocol.<br>Enter your access cipher or license key.
 </div>
 <input
 type="password"
 id="cipher-input"
 class="lock-input"
-placeholder="ENTER CIPHER"
+placeholder="CIPHER OR LICENSE KEY"
 autocomplete="off"
 spellcheck="false"
 >
@@ -358,7 +358,7 @@ throw new Error(`Server responded ${res.status}`);
 }
 const data = await res.json();
 if (data.success) {
-sessionStorage.setItem('la_auth_token', data.token);
+localStorage.setItem('la_auth_token', data.token);
 unlockApp();
 } else {
 showAuthError('INVALID CIPHER. ACCESS DENIED.');
@@ -392,7 +392,7 @@ loadFieldGuideContent();
 }, 500);
 }
 async function loadFieldGuideContent() {
-const token = sessionStorage.getItem('la_auth_token');
+const token = localStorage.getItem('la_auth_token');
 try {
 const res = await fetch('/api/content', {
 headers: { 'X-Alchemist-Token': token || '' }
@@ -403,7 +403,7 @@ showAuthError(data.error || 'Could not load the Field Guide.');
 document.getElementById('lock-screen').style.display = 'flex';
 document.getElementById('lock-screen').style.opacity = '1';
 document.getElementById('main-app').classList.remove('visible', 'animate-fade-in-up');
-if (res.status === 401) sessionStorage.removeItem('la_auth_token');
+if (res.status === 401) localStorage.removeItem('la_auth_token');
 return;
 }
 CYCLES = data.cycles;
@@ -849,7 +849,7 @@ const res = await fetch('/api/pattern-analysis', {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
-'X-Alchemist-Token': sessionStorage.getItem('la_auth_token') || ''
+'X-Alchemist-Token': localStorage.getItem('la_auth_token') || ''
 },
 body: JSON.stringify(payload)
 });
@@ -950,7 +950,7 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
 // INIT
 // ════════════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-const token = sessionStorage.getItem('la_auth_token');
+const token = localStorage.getItem('la_auth_token');
 if (token) {
 document.getElementById('lock-screen').style.display = 'none';
 const app = document.getElementById('main-app');
