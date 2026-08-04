@@ -240,7 +240,20 @@ class="bg-stone-900 text-stone-50 px-8 py-3 rounded-full hover:bg-[#b2945e] hove
 </div>
 <div id="save-indicator">Session saved</div>
 <script>
-lucide.createIcons();
+// Guarded so a blocked/failed unpkg CDN load can't throw here and abort the
+// rest of this script — every statement after an unguarded throw here,
+// including `let CYCLES = null`, would never run, leaving CYCLES stuck in
+// its temporal dead zone and every later reference to it (including
+// loading the actual guide content in loadFieldGuideContent()) throwing
+// ReferenceError for the rest of the page's life.
+function safeCreateIcons() {
+try {
+if (typeof lucide !== 'undefined') lucide.createIcons();
+} catch (err) {
+console.error('lucide failed to initialize:', err);
+}
+}
+safeCreateIcons();
 // ════════════════════════════════════════════════════════════════════
 // CONTENT DATA
 // ════════════════════════════════════════════════════════════════════
@@ -399,10 +412,12 @@ headers: { 'X-Alchemist-Token': token || '' }
 });
 const data = await res.json();
 if (!res.ok) {
-showAuthError(data.error || 'Could not load the Field Guide.');
 document.getElementById('lock-screen').style.display = 'flex';
 document.getElementById('lock-screen').style.opacity = '1';
 document.getElementById('main-app').classList.remove('visible', 'animate-fade-in-up');
+// showAuthError() focuses #cipher-input, which is a no-op while
+// lock-screen is still display:none — must run after it's shown again.
+showAuthError(data.error || 'Could not load the Field Guide.');
 if (res.status === 401) localStorage.removeItem('la_auth_token');
 return;
 }
@@ -411,10 +426,10 @@ ARCHETYPE_PROMPTS = data.archetypePrompts;
 renderStep();
 } catch (e) {
 console.error('Failed to load Field Guide content:', e);
-showAuthError('CONNECTION ERROR. TRY AGAIN.');
 document.getElementById('lock-screen').style.display = 'flex';
 document.getElementById('lock-screen').style.opacity = '1';
 document.getElementById('main-app').classList.remove('visible', 'animate-fade-in-up');
+showAuthError('CONNECTION ERROR. TRY AGAIN.');
 }
 }
 document.getElementById('cipher-input').addEventListener('keypress', e => {
@@ -906,9 +921,20 @@ const cycle = CYCLES[appState.currentStep];
 const renderer = renderers[cycle.type];
 const contentDiv = document.getElementById('step-content');
 contentDiv.classList.remove('animate-slide-right');
+const isLast = appState.currentStep === CYCLES.length - 1;
+// calculateDelta()/runPatternAnalysis()/safeCreateIcons() all look up
+// elements that only exist in the HTML this callback is about to inject
+// (#delta-display, #ai-analysis-container, the cycle's own data-lucide
+// icons) — they must run after contentDiv.innerHTML is set, not before,
+// or they silently no-op against the previous step's still-live DOM.
 requestAnimationFrame(() => {
 contentDiv.innerHTML = renderer(cycle);
 contentDiv.classList.add('animate-slide-right');
+if (isLast) {
+calculateDelta();
+runPatternAnalysis();
+}
+safeCreateIcons();
 });
 document.getElementById('validation-banner').style.display = 'none';
 const total = CYCLES.length - 1;
@@ -918,15 +944,9 @@ document.getElementById('progress-bar').style.width = `${pct}%`;
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 prevBtn.disabled = appState.currentStep === 0;
-const isLast = appState.currentStep === CYCLES.length - 1;
 nextBtn.innerHTML = isLast ? 'Return to Hub' : 'Next →';
 nextBtn.disabled = false;
 saveState();
-if (isLast) {
-calculateDelta();
-runPatternAnalysis();
-}
-lucide.createIcons();
 }
 function nextStep() {
 if (appState.currentStep === CYCLES.length - 1) {
